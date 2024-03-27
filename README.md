@@ -32,8 +32,8 @@ command to run if program contains helper info
 
 Contributors names and contact info
 
-ex. Eetu Taipale
-ex. Arttu Kuitunen
+* Eetu Taipale
+* Arttu Kuitunen
 
 
 ## Version History
