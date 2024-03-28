@@ -10,6 +10,7 @@ async def root():
 @app.get("/another")
 async def root():
     return {"message": "Another one!"}
+
 @app.post("/")
 async def root():
     return {"message": "Post message!"}
