@@ -5,11 +5,13 @@ from dotenv import load_dotenv
 import os
 
 app = FastAPI()
+
 load_dotenv()
+
 TOK_API_TOKEN = os.getenv("TOK_API_TOKEN")
 def get_and_print_stock_quotes():
     try:
-        stockcodes = ["AAPL,TSLA,MSFT", "KO,NVDA,GOOG", "AMZN,LLY,JPM"]
+        stockcodes = ["AAPL,TSLA,MSFT"] #, "KO,NVDA,GOOG", "AMZN,LLY,JPM" <- lisää nämä kun tarvitaan enemmän tietoja
         stock_info_list = []
         for code in stockcodes:
             url = f"https://api.stockdata.org/v1/data/quote?symbols={code}&api_token={TOK_API_TOKEN}"
@@ -39,6 +41,11 @@ def get_and_print_stock_quotes():
         return stock_info_list
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+#print(get_and_print_stock_quotes())
+@app.get("/another")
+async def root():
+    return {"message": "Another one!"}
 
 @app.get("/get_stock_quotes")
 async def quotes():
