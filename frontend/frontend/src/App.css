@@ -1,0 +1,41 @@
+.excel-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.excel-row {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #ccc;
+}
+
+.excel-cell {
+  flex: 1;
+  padding: 8px;
+  text-align: center;
+}
+
+.excel-cell:first-child {
+  display: flex;
+  align-items: center; /* Center items vertically */
+}
+
+.icon {
+  margin-right: 8px; /* Add margin to separate the icon and the name */
+}
+
+.name {
+  margin-left: 8px; /* Adjust margin to move the name slightly to the right */
+}
+
+.positive {
+  color:rgb(1, 163, 1); /* Positive color */
+}
+
+.negative {
+  color:rgb(255, 0, 0) /* Negative color */
+}
+
+.header .excel-cell {
+  font-weight: bold;
+}
