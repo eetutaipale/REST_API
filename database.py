@@ -1,4 +1,5 @@
-from sqlalchemy import Column, create_engine, Table, select, MetaData
+from typing import Self
+from sqlalchemy import Column, Inspector, create_engine, Table, select, MetaData, inspect
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
@@ -21,16 +22,18 @@ engine = create_engine(DATABASE_CONNECTION, echo=True) # Creating an engine obje
 metadata = MetaData()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Declarative base
+# Declarative base and making a table to database.
 Base = declarative_base()
+try:
+    inspector = inspect(engine)
+    if not inspector.has_table("stock_data"): # Logic works properly now in with inspector=inspect(engine)
+        Base.metadata.create_all(bind=engine) # Create the table if it doesn't exist
+        print("Table 'stock_data' created from database.py")
+    else:
+        print("Table \"stock_data\" exists, not creating new.")
 
-
-
-
-
-
-
-
+except Exception as e:
+    print("Error: ", e)
 
 
 
@@ -59,7 +62,7 @@ def save_to_database(stock_data_list):
     if not metadata.tables.get('stock_data'):
         # Create the table if it doesn't exist
         stock_data_table = metadata.create_all()
-        print("Table 'stock_data' created")
+        print("Table 'stock_data' created from save_to_database")
 
     for stock_data in stock_data_list:
         connection.execute(stock_data_table.insert().values(

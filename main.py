@@ -20,7 +20,7 @@ TOK_API_TOKEN = os.getenv("TOK_API_TOKEN")
 
 try:
     database.Base.metadata.create_all(bind=engine)
-    print("Trying to create all models to database")
+    print("Creating all tables from models to database")
 except Exception as e:
     print("Error: ", e)
 
@@ -84,7 +84,7 @@ def populate_database(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
     
-
+# Post toimii 
 @app.post("/stock_data/")
 def create_stock(stock: models.StockBase, db: Session = Depends(get_db)):
     try:
@@ -96,7 +96,7 @@ def create_stock(stock: models.StockBase, db: Session = Depends(get_db)):
         return db_stock
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=522, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/stock/{stock_id}")
 def get_stock(stock_id: int, db: Session = Depends(get_db)):
