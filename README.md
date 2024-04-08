@@ -15,6 +15,7 @@ pip install sqlalchemy
 pip install uvicorn[standard]
 pip install fastapi[all]
 pip install pyodbc
+python -m pip install requests
 ```
 SQL Alchemy connections with mssql dialect(microsoft sql server) and ODBC driver 17
 In case using other dialects changes will be needed. 
@@ -34,6 +35,7 @@ Contributors names and contact info
 
 * Eetu Taipale
 * Arttu Kuitunen
+* Sami Kukkonen
 
 
 ## Version History

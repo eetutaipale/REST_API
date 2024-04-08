@@ -1,27 +1,55 @@
-import json
-from fastapi import FastAPI, HTTPException
-import requests
+from fastapi import FastAPI, HTTPException, Request, status, Depends
+
+from typing import Annotated # to annotate session dependency
+from pydantic import BaseModel, Field # only for ORM use? and data validation
+import database
+from database import engine, SessionLocal
+from sqlalchemy.orm import Session
 from dotenv import load_dotenv
+import models
+
+import requests
+import json
 import os
 
-app = FastAPI()
 load_dotenv()
+
+##################
+app = FastAPI()
 TOK_API_TOKEN = os.getenv("TOK_API_TOKEN")
-def get_and_print_stock_quotes():
+
+try:
+    database.Base.metadata.create_all(bind=engine)
+    print("Creating all tables from models to database")
+except Exception as e:
+    print("Error: ", e)
+
+############ database dependency
+def get_db():
+    print("Creating session in get_db()")
+    db = SessionLocal()
+    db.__init__
     try:
-        stockcodes = ["AAPL,TSLA,MSFT", "KO,NVDA,GOOG", "AMZN,LLY,JPM"]
-        stock_info_list = []
+        yield db
+    finally:
+        db.close()
+db_dependency = Annotated[Session, Depends(get_db)]
+
+
+# Fetching stock data from StockAPI and returning a list of stocks
+def fetch_api_data() -> list:
+    try:
+        stockcodes = ["AAPL,TSLA,MSFT"] #, "KO,NVDA,GOOG", "AMZN,LLY,JPM" <- lisää nämä kun tarvitaan enemmän tietoja
+        stock_data_list = []
         for code in stockcodes:
             url = f"https://api.stockdata.org/v1/data/quote?symbols={code}&api_token={TOK_API_TOKEN}"
-
             response = requests.get(url)
 
             if response.status_code == 200:
                 quotes_data = json.loads(response.text)
 
                 if 'data' in quotes_data:
-                    stock_data = quotes_data['data']
-                    
+                    stock_data = quotes_data['data']   
                     # Print out the fetched data
                     print(f"Fetched stock quotes for {len(stock_data)} stocks:")
 
@@ -33,14 +61,47 @@ def get_and_print_stock_quotes():
                             "volume": stock['volume'],
                             "previous_close_price": stock['previous_close_price']
                         }
-                        stock_info_list.append(stock_info)
-            
-            
-        return stock_info_list
+                        stock_data_list.append(stock_info)
+        return stock_data_list
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/get_stock_quotes")
-async def quotes():
-    stock = get_and_print_stock_quotes()
-    return {"stock data": stock}
+######################    
+#FastAPI endpoints  to PORTFOLIO
+# Endpoint to populate the database
+@app.post("/populate_database")
+def populate_database(db: Session = Depends(get_db)):
+    try:
+        stock_data_list = fetch_api_data()
+        for stock_data in stock_data_list:
+            stock = models.Stock(**stock_data) #be sure of stock_data model
+            db.add(stock)
+        db.commit()
+        return {"message": "Tried to populate database with fetch_api_data"}
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+    
+# Post toimii 
+@app.post("/stock_data/")
+def create_stock(stock: models.StockBase, db: Session = Depends(get_db)):
+    try:
+        print("Trying to post("")")
+        db_stock = models.Stock(**stock.model_dump())
+        db.add(db_stock)
+        db.commit()
+        db.refresh(db_stock)
+        return db_stock
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/stock/{stock_id}")
+def get_stock(stock_id: int, db: Session = Depends(get_db)):
+    stock = db.query(models.Stock).filter(models.Stock.id == stock_id).first()
+    if stock is None:
+        raise HTTPException(status_code=404, detail="Stock not found")
+    return stock
+
