@@ -1,5 +1,5 @@
 from typing import Self
-from sqlalchemy import Column, Inspector, create_engine, Table, select, MetaData, inspect
+from sqlalchemy import URL, Column, Inspector, create_engine, Table, select, MetaData, inspect
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
@@ -17,8 +17,23 @@ UID = os.getenv("UID")
 PWD = os.getenv("PWD")
 DATABASE_CONNECTION = f"mssql+pyodbc://{UID}:{PWD}@{SERVER_IP}/{DATABASE}?driver={DRIVER}"
 
+engine_str = URL.create(
+    drivername="mssql+pyodbc",
+    username="meklari",
+    password="Salasana!",
+    host="sqlserverest.database.windows.net",
+    port=1433,
+    database="Stockdb",
+    query={
+        "driver": "ODBC Driver 17 for SQL Server",
+        "TrustServerCertificate": "no",
+        "Connection Timeout": "30",
+        "Encrypt": "yes",
+    },
+)
+
 # Engine and sessionmaker
-engine = create_engine(DATABASE_CONNECTION, echo=True) # Creating an engine object to connect to database
+engine = create_engine(engine_str, echo=True) # Creating an engine object to connect to database
 metadata = MetaData()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
