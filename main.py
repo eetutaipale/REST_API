@@ -17,14 +17,6 @@ load_dotenv()
 ##################
 app = FastAPI()
 TOK_API_TOKEN = os.getenv("TOK_API_TOKEN")
-
-try:
-    database.Base.metadata.create_all(bind=engine)
-    print("Creating all tables from models to database")
-except Exception as e:
-    print("Error: ", e)
-
-############ database dependency
 def get_db():
     print("Creating session in get_db()")
     db = SessionLocal()
@@ -34,6 +26,14 @@ def get_db():
     finally:
         db.close()
 db_dependency = Annotated[Session, Depends(get_db)]
+
+try:
+    database.Base.metadata.create_all(bind=engine)
+    print("Creating all tables from models to database")
+except Exception as e:
+    print("Error: ", e)
+
+############ database dependency
 
 
 # Fetching stock data from StockAPI and returning a list of stocks
@@ -55,12 +55,13 @@ def fetch_api_data(db) -> list:
 
                     for stock in stock_data:
                         stock_info = {
-                            "id": generate_id(db), 
+                            "id": 1, 
                             "ticker": stock['ticker'],
                             "name": stock['name'],
                             "price": stock['price'],
-                            "volume": stock['volume'],
-                            "previous_close_price": stock['previous_close_price']
+                            "previous_close_price": stock['previous_close_price'],
+                            "volume": stock['volume']
+                            
                         }
                         
                         stock_data_list.append(stock_info)
@@ -102,12 +103,7 @@ def create_stock(stock: models.StockBase, db: Session = Depends(get_db)):
 
 app.put("/change_stock")
 
-def pull_table():
-    
-    
-    
-    return 
-    
+
     
 @app.get("/stock/{stock_id}")
 def get_stock(stock_id: int, db: Session = Depends(get_db)):
@@ -116,4 +112,3 @@ def get_stock(stock_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Stock not found")
     return stock
 
-app.get("/")
