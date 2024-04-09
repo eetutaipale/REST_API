@@ -88,12 +88,6 @@ def save_to_database(stock_data_list):
         ))
     print("Closing connection...")
     connection.close()
-def generate_id(db):
-    # Query the length of the Stock table
-    table_length = db.query(func.count(models.Stock.id)).scalar()
-    # Generate ID based on the length of the table
-    print(table_length)
-    return table_length + 1
 
 # CREATE function, add new stock to portfolio, portfolio 1 - N stocks
 def create_portfolio_item():
