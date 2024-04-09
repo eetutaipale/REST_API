@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException, Request, status, Depends
 from typing import Annotated # to annotate session dependency
 from pydantic import BaseModel, Field # only for ORM use? and data validation
 import database
-from database import engine, SessionLocal, generate_id
+from database import engine, SessionLocal
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 import models
@@ -37,7 +37,7 @@ db_dependency = Annotated[Session, Depends(get_db)]
 
 
 # Fetching stock data from StockAPI and returning a list of stocks
-def fetch_api_data(db) -> list:
+def fetch_api_data() -> list:
     try:
         stockcodes = ["AAPL,TSLA,MSFT"] #, "KO,NVDA,GOOG", "AMZN,LLY,JPM" <- lisää nämä kun tarvitaan enemmän tietoja
         stock_data_list = []
@@ -55,16 +55,13 @@ def fetch_api_data(db) -> list:
 
                     for stock in stock_data:
                         stock_info = {
-                            "id": generate_id(db), 
                             "ticker": stock['ticker'],
                             "name": stock['name'],
                             "price": stock['price'],
                             "volume": stock['volume'],
                             "previous_close_price": stock['previous_close_price']
                         }
-                        
                         stock_data_list.append(stock_info)
-                print(stock_data_list)             
         return stock_data_list
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -75,7 +72,7 @@ def fetch_api_data(db) -> list:
 @app.post("/populate_database")
 def populate_database(db: Session = Depends(get_db)):
     try:
-        stock_data_list = fetch_api_data(db)
+        stock_data_list = fetch_api_data()
         for stock_data in stock_data_list:
             stock = models.Stock(**stock_data) #be sure of stock_data model
             db.add(stock)
@@ -86,6 +83,7 @@ def populate_database(db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
+    
 # Post toimii 
 @app.post("/stock_data/")
 def create_stock(stock: models.StockBase, db: Session = Depends(get_db)):
@@ -100,15 +98,6 @@ def create_stock(stock: models.StockBase, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
-app.put("/change_stock")
-
-def pull_table():
-    
-    
-    
-    return 
-    
-    
 @app.get("/stock/{stock_id}")
 def get_stock(stock_id: int, db: Session = Depends(get_db)):
     stock = db.query(models.Stock).filter(models.Stock.id == stock_id).first()
@@ -116,4 +105,3 @@ def get_stock(stock_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Stock not found")
     return stock
 
-app.get("/")
