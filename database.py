@@ -1,5 +1,5 @@
 from typing import Self
-from sqlalchemy import URL, Column, Inspector, create_engine, Table, select, MetaData, inspect
+from sqlalchemy import URL, Column, Inspector, create_engine, Table, func, select, MetaData, inspect
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
@@ -107,4 +107,9 @@ def update_portfolio_item():
 def delete_portfolio_item():
     return
 
-
+def generate_id(db):
+    # Query the length of the Stock table
+    table_length = db.query(func.count(models.Stock.id)).scalar()
+    # Generate ID based on the length of the table
+    print(table_length)
+    return table_length + 1

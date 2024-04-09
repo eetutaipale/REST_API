@@ -55,11 +55,12 @@ def fetch_api_data() -> list:
 
                     for stock in stock_data:
                         stock_info = {
+                            
                             "ticker": stock['ticker'],
                             "name": stock['name'],
-                            "price": stock['price'],
+                            "price_today": stock['price'],
                             "volume": stock['volume'],
-                            "previous_close_price": stock['previous_close_price']
+                            "last_days_price": stock['previous_close_price']
                         }
                         stock_data_list.append(stock_info)
         return stock_data_list
@@ -105,3 +106,18 @@ def get_stock(stock_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Stock not found")
     return stock
 
+def generate_id(db: Session) -> int:
+    # Query the length of the Stock table
+    table_length = db.query(models.Stock).count()
+    # Generate ID based on the length of the table
+    return table_length + 1
+
+@app.put("/stocks/{id}/update-volume/")
+async def update_volume(id: int, volume: int, db: Session = Depends(get_db)):
+    stock = db.query(models.Stock).filter(models.Stock.id == id).first()
+    if stock is None:
+        raise HTTPException(status_code=404, detail="Stock not found")
+    stock.volume = volume
+    db.commit()
+    db.refresh(stock)
+    return {"message": "Volume updated successfully", "ticker": id, "new_volume": volume}
