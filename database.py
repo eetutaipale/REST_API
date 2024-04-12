@@ -107,9 +107,10 @@ def update_portfolio_item():
 def delete_portfolio_item():
     return
 
-def generate_id(db):
-    # Query the length of the Stock table
-    table_length = db.query(func.count(models.Stock.id)).scalar()
-    # Generate ID based on the length of the table
-    print(table_length)
-    return table_length + 1
+def get_table_length(table_name):
+    metadata.reflect(bind=engine)
+    table = metadata.tables[table_name]
+    with engine.connect() as connection:
+        result = connection.execute(func.count().select().select_from(table))
+        table_length = result.scalar()
+        return table_length + 1

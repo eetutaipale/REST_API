@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException, Request, status, Depends
 from typing import Annotated # to annotate session dependency
 from pydantic import BaseModel, Field # only for ORM use? and data validation
 import database
-from database import engine, SessionLocal
+from database import engine, SessionLocal, get_table_length
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 import models
@@ -41,6 +41,8 @@ def fetch_api_data() -> list:
     try:
         stockcodes = ["AAPL,TSLA,MSFT"] #, "KO,NVDA,GOOG", "AMZN,LLY,JPM" <- lisää nämä kun tarvitaan enemmän tietoja
         stock_data_list = []
+        table_length = get_table_length('stock_data')
+        print("Length of 'stock_data' table:", table_length)
         for code in stockcodes:
             url = f"https://api.stockdata.org/v1/data/quote?symbols={code}&api_token={TOK_API_TOKEN}"
             response = requests.get(url)
@@ -55,7 +57,7 @@ def fetch_api_data() -> list:
 
                     for stock in stock_data:
                         stock_info = {
-                            
+                            "id": table_length,
                             "ticker": stock['ticker'],
                             "name": stock['name'],
                             "price_today": stock['price'],
@@ -63,6 +65,7 @@ def fetch_api_data() -> list:
                             "last_days_price": stock['previous_close_price']
                         }
                         stock_data_list.append(stock_info)
+                        table_length += 1
         return stock_data_list
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -102,6 +105,7 @@ def create_stock(stock: models.StockBase, db: Session = Depends(get_db)):
 @app.get("/stock/{stock_id}")
 def get_stock(stock_id: int, db: Session = Depends(get_db)):
     stock = db.query(models.Stock).filter(models.Stock.id == stock_id).first()
+    
     if stock is None:
         raise HTTPException(status_code=404, detail="Stock not found")
     return stock
