@@ -6,20 +6,15 @@ import database
 from database import engine, SessionLocal, get_table_length
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
+from fetch_api_data import fetch_api_data
 import models
 
-
-import datetime
-
-import requests
-import json
-import os
 
 load_dotenv()
 
 ##################
 app = FastAPI()
-TOK_API_TOKEN = os.getenv("TOK_API_TOKEN")
+
 
 # This try-clause ought to be better placed
 try:
@@ -47,43 +42,7 @@ def generate_id(db: Session) -> int:
 
 db_dependency = Annotated[Session, Depends(get_db)]
 
-# Fetching stock data from StockAPI and returning a list of stocks
-def fetch_api_data() -> list:
-    try:
-        stock_tickers_list = ["AAPL,TSLA,MSFT"] #, "KO,NVDA,GOOG", "AMZN,LLY,JPM" <- lisää nämä kun tarvitaan enemmän tietoja
-        stock_data_list = []
-        table_length = get_table_length('stock')
-        print("Length of 'stock_data' table:", table_length)
 
-        for ticker in stock_tickers_list:
-            url = f"https://api.stockdata.org/v1/data/quote?symbols={ticker}&api_token={TOK_API_TOKEN}"
-            response = requests.get(url)
-
-            if response.status_code == 200:
-                quotes_data = json.loads(response.text)
-                
-                if 'data' in quotes_data:
-                    stock_data = quotes_data['data']   
-                    # Print out the fetched data
-                    print(f"Fetched stock quotes for {len(stock_data)} stocks:")
-                    today = datetime.date.today()
-                    print(today)
-                for stock in stock_data:
-                        
-                        stock_info = {
-                            "id": table_length,
-                            "ticker": stock['ticker'],
-                            "name": stock['name'],
-                            "price_today": stock['price'],
-                            "volume": stock['volume'],
-                            "last_days_price": stock['previous_close_price'],
-                            "date": today
-                        }
-                        stock_data_list.append(stock_info)
-                        table_length += 1  
-        return stock_data_list
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 ######################    
 # FastAPI endpoints  to PORTFOLIO
