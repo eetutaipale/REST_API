@@ -30,10 +30,6 @@ class Portfolio(Base):
     transactions = relationship("Transaction", back_populates="portfolio")
     portfolio_value = Column(Integer)
 
-class PortfolioBase(BaseModel):
-    stocks: str
-    value: int
-
 
 class Transaction(Base):
     __tablename__ = 'transaction'
