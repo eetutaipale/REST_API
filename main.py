@@ -146,24 +146,33 @@ async def update_volume(id: int, volume: int, db: Session = Depends(get_db)):
 
 # Portfolio calls
 @app.post("/portfolio/post")
-async def create_portfolio_item(stocks: str, value: int, Session = Depends(get_db)):
-    new_portfolio_item = models.Portfolio(stocks=stocks, value=value)
-    Session.add(new_portfolio_item)
-    Session.commit()
-    return new_portfolio_item
+async def create_portfolio_item(portfolio_value: int, db: Session = Depends(get_db)):
+    new_portfolio_item = models.Portfolio(portfolio_value=portfolio_value)
+    db.add(new_portfolio_item)
+    db.commit()
+    return {"message": "new transaction done"}
 
-@app.get("/Get/All")
-async def get_portfolio(db: Session = Depends(get_db)): 
-    portfolio = db.query(models.Portfolio).all()
-    return portfolio
+@app.get("/portfolios/")
+async def get_portfolios(db: Session = Depends(get_db)): 
+    portfolios = db.query(models.Portfolio).all()
+    return portfolios
 
 @app.put("/portfolio/{id}")
-async def update_portfolio_item(session, portfolio_id: int, stocks: str, value: int):
-    portfolio_item = session.query(models.Portfolio).filter(models.Portfolio.id == portfolio_id).first()
+async def update_portfolio_item(portfolio_id: int, portfolio_value: int, db: Session = Depends(get_db)):
+    portfolio_item = db.query(models.Portfolio).filter(models.Portfolio.id == portfolio_id).first()
     if portfolio_item:
-        portfolio_item.stocks = stocks
-        portfolio_item.value = value
-        session.commit()
+        portfolio_item.portfolio_value = portfolio_value
+        db.commit()
         return portfolio_item
     else:
-        return None  # Portfolio item not found
+        raise HTTPException(status_code=404, detail="Portfolio item not found")
+
+@app.delete("/portfolio/{id}")
+async def delete_portfolio_item(portfolio_id: int, db: Session = Depends(get_db)):
+    portfolio_item = db.query(models.Portfolio).filter(models.Portfolio.id == portfolio_id).first()
+    if portfolio_item:
+        db.delete(portfolio_item)
+        db.commit()
+        return {"message": "Portfolio item deleted successfully"}
+    else:
+        raise HTTPException(status_code=404, detail="Portfolio item not found")
