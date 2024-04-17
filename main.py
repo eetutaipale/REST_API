@@ -8,6 +8,9 @@ from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 import models
 
+
+import datetime
+
 import requests
 import json
 import os
@@ -49,7 +52,7 @@ def fetch_api_data() -> list:
     try:
         stock_tickers_list = ["AAPL,TSLA,MSFT"] #, "KO,NVDA,GOOG", "AMZN,LLY,JPM" <- lisää nämä kun tarvitaan enemmän tietoja
         stock_data_list = []
-        table_length = get_table_length('stock_data')
+        table_length = get_table_length('stock')
         print("Length of 'stock_data' table:", table_length)
 
         for ticker in stock_tickers_list:
@@ -57,24 +60,27 @@ def fetch_api_data() -> list:
             response = requests.get(url)
 
             if response.status_code == 200:
-                quotes_response = json.loads(response.text)
-
-                if 'response' in quotes_response:
-                    stock_data = quotes_response['response']   
+                quotes_data = json.loads(response.text)
+                
+                if 'data' in quotes_data:
+                    stock_data = quotes_data['data']   
                     # Print out the fetched data
                     print(f"Fetched stock quotes for {len(stock_data)} stocks:")
-
-                    for stock in stock_data:
+                    today = datetime.date.today()
+                    print(today)
+                for stock in stock_data:
+                        
                         stock_info = {
                             "id": table_length,
                             "ticker": stock['ticker'],
                             "name": stock['name'],
                             "price_today": stock['price'],
                             "volume": stock['volume'],
-                            "last_days_price": stock['previous_close_price']
+                            "last_days_price": stock['previous_close_price'],
+                            "date": today
                         }
                         stock_data_list.append(stock_info)
-                        table_length += 1
+                        table_length += 1  
         return stock_data_list
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -90,14 +96,15 @@ def populate_database(db: Session = Depends(get_db)):
             stock = models.Stock(**stock_data) #be sure of stock_data model
             db.add(stock)
         db.commit()
-        return {"message": "Tried to populate database with fetch_api_data"}
+        return {"added stockdata"}
 
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
     
+
 # Post toimii 
-@app.post("/stock_data/")
+@app.post("/stock/")
 def create_stock(stock: models.StockBase, db: Session = Depends(get_db)):
     try:
         print("Trying to post("")")
@@ -110,14 +117,15 @@ def create_stock(stock: models.StockBase, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
     
-@app.get("/stock_data/")
+@app.get("/stock/")
 def get_stock(db: Session = Depends(get_db)):
+    
     stock_data = db.query(models.Stock).all()
     if not stock_data:
         raise HTTPException(status_code=404, detail="Stock_data not found")
     return stock_data
 
-@app.get("/stock_data/{stock_id}")
+@app.get("/stock/{stock_id}")
 def get_stock(stock_id: int, db: Session = Depends(get_db)):
     stock = db.query(models.Stock).filter(models.Stock.id == stock_id).first()
     
@@ -125,7 +133,7 @@ def get_stock(stock_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Stock not found")
     return stock
 
-@app.put("/stocks/{id}/update-volume/")
+@app.put("//{id}/update-volume/")
 async def update_volume(id: int, volume: int, db: Session = Depends(get_db)):
     stock = db.query(models.Stock).filter(models.Stock.id == id).first()
     if not stock:
@@ -134,3 +142,28 @@ async def update_volume(id: int, volume: int, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(stock)
     return {"message": "Volume updated successfully", "ticker": id, "new_volume": volume}
+
+
+# Portfolio calls
+@app.post("/portfolio/post")
+async def create_portfolio_item(stocks: str, value: int, Session = Depends(get_db)):
+    new_portfolio_item = models.Portfolio(stocks=stocks, value=value)
+    Session.add(new_portfolio_item)
+    Session.commit()
+    return new_portfolio_item
+
+@app.get("/Get/All")
+async def get_portfolio(db: Session = Depends(get_db)): 
+    portfolio = db.query(models.Portfolio).all()
+    return portfolio
+
+@app.put("/portfolio/{id}")
+async def update_portfolio_item(session, portfolio_id: int, stocks: str, value: int):
+    portfolio_item = session.query(models.Portfolio).filter(models.Portfolio.id == portfolio_id).first()
+    if portfolio_item:
+        portfolio_item.stocks = stocks
+        portfolio_item.value = value
+        session.commit()
+        return portfolio_item
+    else:
+        return None  # Portfolio item not found

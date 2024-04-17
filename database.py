@@ -41,7 +41,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 try:
     inspector = inspect(engine)
-    if not inspector.has_table("stock_data"): # Logic works properly now in with inspector=inspect(engine)
+    if not inspector.has_table("stock"): # Logic works properly now in with inspector=inspect(engine)
         Base.metadata.create_all(bind=engine) # Create the table if it doesn't exist
         print("Table 'stock_data' created from database.py")
     else:
@@ -53,9 +53,8 @@ except Exception as e:
 
 
 
-
 # Populate database with stockdata
-def save_to_database(stock_data_list):
+
     print("Save to database in action...")
     # Set up logging configuration
     logging.basicConfig(level=logging.DEBUG,
@@ -72,6 +71,7 @@ def save_to_database(stock_data_list):
         Column('price', str),
         Column('volume', str),
         Column('previous_close_price', str)
+
     )
     # SQL query with SQLAlchemy methods
     if not metadata.tables.get('stock_data'):
@@ -89,23 +89,37 @@ def save_to_database(stock_data_list):
     print("Closing connection...")
     connection.close()
 
-# CREATE function, add new stock to portfolio, portfolio 1 - N stocks
-def create_portfolio_item():
-    return
+def create_portfolio_item(session, stocks: str, value: int):
+    new_portfolio_item = Portfolio(stocks=stocks, value=value)
+    session.add(new_portfolio_item)
+    session.commit()
+    return new_portfolio_item
 
-# READ functions, read stockmarket and portfolio as different tabs
-def get_portfolio():
-    return
-def get_stockmarket():
-    return
+# READ function, read portfolio
+def get_portfolio(session):
+    return session.query(Portfolio).all()
 
-# UPDATE function, if needed to add/buy more existing stock
-def update_portfolio_item():
-    return
+
+# UPDATE function, update existing portfolio item
+def update_portfolio_item(session, portfolio_id: int, stocks: str, value: int):
+    portfolio_item = session.query(Portfolio).filter(Portfolio.id == portfolio_id).first()
+    if portfolio_item:
+        portfolio_item.stocks = stocks
+        portfolio_item.value = value
+        session.commit()
+        return portfolio_item
+    else:
+        return None  # Portfolio item not found
 
 # DELETE function, delete from portfolio
-def delete_portfolio_item():
-    return
+def delete_portfolio_item(session, portfolio_id: int):
+    portfolio_item = session.query(Portfolio).filter(Portfolio.id == portfolio_id).first()
+    if portfolio_item:
+        session.delete(portfolio_item)
+        session.commit()
+        return True
+    else:
+        return False  # Portfolio item not found
 
 def get_table_length(table_name):
     metadata.reflect(bind=engine)
