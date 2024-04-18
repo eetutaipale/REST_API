@@ -1,3 +1,4 @@
+import datetime
 from fastapi import FastAPI, HTTPException, Request, status, Depends
 
 from typing import Annotated # to annotate session dependency
@@ -8,14 +9,26 @@ from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 from fetch_api_data import fetch_api_data
 import models
+from fastapi.middleware.cors import CORSMiddleware
 
+import datetime
+
+import requests
+import json
+import os
 
 load_dotenv()
 
 ##################
 app = FastAPI()
 
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Add the origin of your frontend
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["*"],
+)
 
 # Maybe change into a method ie. def create_all_tables()
 try:
@@ -76,8 +89,9 @@ async def create_stock(stock: models.StockBase, db: Session = Depends(get_db)):
     
 
 @app.get("/stock/")
-async def get_stock(db: Session = Depends(get_db)):
-    
+def get_stock(db: Session = Depends(get_db)):
+    today = datetime.date.today()
+    print(today)
     stock_data = db.query(models.Stock).all()
     if not stock_data:
         raise HTTPException(status_code=404, detail="Stock_data not found")
@@ -138,3 +152,24 @@ async def delete_portfolio_item(portfolio_id: int, db: Session = Depends(get_db)
         return {"message": "Portfolio item deleted successfully"}
     else:
         raise HTTPException(status_code=404, detail="Portfolio item not found")
+    
+# Transaction
+@app.post("/transactions/")
+async def create_transaction(stock_id: int, portfolio_id: int, stock_amount: int, db: Session = Depends(get_db)):
+    # Check if stock and portfolio exist
+    stock = db.query(models.Stock).filter(models.Stock.id == stock_id).first()
+    if not stock:
+        raise HTTPException(status_code=404, detail="Stock not found")
+    
+    portfolio = db.query(models.Portfolio).filter(models.Portfolio.id == portfolio_id).first()
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    today = datetime.date.today()
+    # Create a new transaction
+    transaction = models.Transaction(stock_id=stock_id, portfolio_id=portfolio_id, stock_amount=stock_amount, purchase_date=today)
+    db.add(transaction)
+    db.commit()
+    db.refresh(transaction)
+    return transaction
+
+

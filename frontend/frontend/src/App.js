@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import Drawer from '@mui/material/Drawer';
 import List from '@mui/material/List';
@@ -7,6 +7,8 @@ import ListItemText from '@mui/material/ListItemText';
 import AppBar from '@mui/material/AppBar';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
+import { fetchData } from './executions/get';
+import DataList from './Datalist';
 // Icon Imports
 import { SiApple, SiTesla, SiNvidia, SiMicrosoft, SiAmazon, SiGoogle, SiCocacola } from "react-icons/si";
 
@@ -47,11 +49,23 @@ const StockRow = ({ icon, name, change, value }) => {
 
 function App() {
   const [currentPage, setCurrentPage] = useState('myStocks');
-
+  const [data, setData] = useState(null);
   const changePage = (page) => {
     setCurrentPage(page);
   };
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        const responseData = await fetchData('stock/'); // Call the fetchData function with the endpoint
+        console.log(responseData);
+        setData(responseData);
+      } catch (error) {
+        console.error('Error fetching initial data:', error);
+      }
+    };
 
+    fetchInitialData();
+  }, []);
   // Uncomment the following code when implementing data fetching from backend
   /*
   const [stocksData, setStocksData] = useState([]);
@@ -128,24 +142,38 @@ function App() {
   };
 
   return (
-    <div className="App">
-      <AppBar position="static">
-      </AppBar>
-      <Drawer variant="permanent">
-        <List>
-          <ListItem button onClick={() => changePage('myStocks')}>
-            <ListItemText primary="My Stocks" />
-          </ListItem>
-          <ListItem button onClick={() => changePage('exchangeRates')}>
-            <ListItemText primary="Exchange Rates" />
-          </ListItem>
-        </List>
-      </Drawer>
-      <main>
-        {renderPage()}
-      </main>
+    <div>
+      <h1>Data from Backend:</h1>
+      {data ? (
+        <DataList dataList={data} />
+      ) : (
+        <p>Loading...</p>
+      )}
     </div>
   );
 }
 
 export default App;
+/* 
+return (
+  <div className="App">
+    
+    <AppBar position="static">
+    </AppBar>
+    <Drawer variant="permanent">
+      <List>
+        <ListItem button onClick={() => changePage('myStocks')}>
+          <ListItemText primary="My Stocks" />
+        </ListItem>
+        <ListItem button onClick={() => changePage('exchangeRates')}>
+          <ListItemText primary="Exchange Rates" />
+        </ListItem>
+      </List>
+    </Drawer>
+    <main>
+      {renderPage()}
+    </main>
+  </div>
+  
+);
+*/
