@@ -2,7 +2,7 @@ import datetime
 from fastapi import FastAPI, HTTPException, Request, status, Depends
 
 from typing import Annotated # to annotate session dependency
-from pydantic import BaseModel, Field # only for ORM use? and data validation
+# from pydantic import BaseModel, Field # only for ORM use? and data validation
 import database
 from database import engine, SessionLocal, get_table_length
 from sqlalchemy.orm import Session
@@ -12,10 +12,6 @@ import models
 from fastapi.middleware.cors import CORSMiddleware
 
 import datetime
-
-import requests
-import json
-import os
 
 load_dotenv()
 

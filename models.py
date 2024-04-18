@@ -5,7 +5,7 @@ from database import Base
 class Stock(Base):
     __tablename__ = 'stock'
     id = Column(Integer, primary_key=True, index=True)
-    ticker = Column(String(10), unique=True)
+    ticker = Column(String(10))
     name = Column(String(50))
     price_today = Column(Integer)
     last_days_price = Column(Integer)
