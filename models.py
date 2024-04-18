@@ -37,7 +37,7 @@ class Transaction(Base):
     stock_id = Column(Integer, ForeignKey("stock.id"))
     portfolio_id = Column(Integer, ForeignKey("portfolio.id"))
     stock_amount = Column(Integer)
-    #purchase_date = Column(DateTime, default=datetime.utcnow)
+    purchase_date = Column(String(50))
 
     stock_data = relationship("Stock", back_populates="transactions")
     portfolio = relationship("Portfolio", back_populates="transactions")

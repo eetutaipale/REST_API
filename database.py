@@ -10,17 +10,11 @@ import logging
 
 # Log in credentials and connection URL-string as DATABASE_CONNECTION
 load_dotenv()
-SERVER_IP = os.getenv("SERVER_IP")
-DRIVER = os.getenv("DRIVER")
-DATABASE = os.getenv("DATABASE")
-UID = os.getenv("UID")
-PWD = os.getenv("PWD")
-DATABASE_CONNECTION = f"mssql+pyodbc://{UID}:{PWD}@{SERVER_IP}/{DATABASE}?driver={DRIVER}"
-
+passwords = os.getenv("password")
 engine_str = URL.create(
     drivername="mssql+pyodbc",
     username="meklari",
-    password="Salasana!",
+    password=f"{passwords}",
     host="sqlserverest.database.windows.net",
     port=1433,
     database="Stockdb",
