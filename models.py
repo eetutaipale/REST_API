@@ -29,9 +29,13 @@ class Portfolio(Base):
     id = Column(Integer, primary_key=True, index=True)
     portfolio_name = Column(String(50))
     portfolio_value = Column(Integer)
-
     transactions = relationship("Transaction", back_populates="portfolios")
 
+class PortfolioBase(BaseModel):
+    portfolio_name: str
+    portfolio_value: int
+
+# Transaction models
 class Transaction(Base):
     __tablename__ = 'transaction'
     id = Column(Integer, primary_key=True, index=True)
@@ -39,7 +43,6 @@ class Transaction(Base):
     portfolio_id = Column(Integer, ForeignKey("portfolio.id"))
     stock_amount = Column(Integer)
     purchase_date = Column(String(50))
-
     stocks = relationship("Stock", back_populates="transactions")
     portfolios = relationship("Portfolio", back_populates="transactions")
 
@@ -50,11 +53,6 @@ class TransactionCreate(BaseModel):
     stock_amount: int
     purchase_date: str
 ############ pydantic mallien alustaminen -> varmentaa
-
-
-class PortfolioBase(BaseModel):
-    portfolio_name: str
-    portfolio_value: int
 
 class Base(DeclarativeBase):
     pass

@@ -33,11 +33,6 @@ create_all_tables([models.Stock,
                    models.Portfolio, 
                    models.Transaction])
 
-# # Creates an id by checking the amout of models.Stock -type items in database and returns next value as int
-# def generate_id(db: Session) -> int:
-#     table_length = db.query(models.Stock).count()
-#     return table_length + 1
-
 ######################    
 # FastAPI ENDPOINTS to communicate with client/frontend
 # TODO: Function should populate the data once a day automatically if running -- let's see if this is needed
@@ -88,18 +83,32 @@ async def get_stock(stock_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Stock not found")
     return stock
 
+# Endpoint to CREATE a portfolio    
+@app.post("/portfolios/")
+async def create_portfolio(portfolio: models.PortfolioBase, db: Session = Depends(get_db)):
+    db_portfolio = models.Portfolio(**portfolio.model_dump())
+    db.add(db_portfolio)
+    db.commit()
+    db.refresh(db_portfolio)
+    return db_portfolio
+
 # Endpoint to READ a portfolio and it's contents (stocks it holds)
 @app.get("/portfolios/")
 async def get_portfolios(db: Session = Depends(get_db)): 
     portfolios = db.query(models.Portfolio).all()
     return portfolios
 
-# Endpoint to CREATE a transaction 
-# TODO: should make a transaction with transaction_id referring to portfolio_id and stock_id
+# Endpoint to READ portfolio by ID 
+@app.get("/portfolios/{id}") 
+async def get_portfolio(id: int, db: Session = Depends(get_db)):
+    portfolio = db.query(models.Portfolio).filter(models.Portfolio.id == id).first()
+    
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    return portfolio
 
-# Endpoint to UPDATE porfolio_item with an id
-# TODO: This should probably be "transaction" or to be used in changing portfolio.value
-@app.put("/portfolio/{id}")
+# TODO: This should probably be used in changing portfolio.value
+@app.put("/portfolios/{id}")
 async def update_portfolio_item(portfolio_id: int, portfolio_value: int, db: Session = Depends(get_db)):
     portfolio_item = db.query(models.Portfolio).filter(models.Portfolio.id == portfolio_id).first()
     if portfolio_item:
@@ -108,18 +117,9 @@ async def update_portfolio_item(portfolio_id: int, portfolio_value: int, db: Ses
         return portfolio_item
     else:
         raise HTTPException(status_code=404, detail="Portfolio item not found")
-
-# Endpoint to CREATE a portfolio    
-@app.post("/portfolio/")
-async def create_portfolio(portfolio: models.PortfolioBase, db: Session = Depends(get_db)):
-    db_portfolio = models.Portfolio(**portfolio.model_dump())
-    db.add(db_portfolio)
-    db.commit()
-    db.refresh(db_portfolio)
-    return db_portfolio
-
+    
 # Endpoint to DELETE a certain portfolio
-@app.delete("/portfolio/{id}")
+@app.delete("/portfolios/{id}")
 async def delete_portfolio_item(portfolio_id: int, db: Session = Depends(get_db)):
     portfolio_item = db.query(models.Portfolio).filter(models.Portfolio.id == portfolio_id).first()
     if portfolio_item:
@@ -131,8 +131,7 @@ async def delete_portfolio_item(portfolio_id: int, db: Session = Depends(get_db)
     else:
         raise HTTPException(status_code=404, detail="Portfolio item not found")
     
-# Endpoint to CREATE a transaction, does not need a PUT or DELETE in my opinion
-# TODO: Should add a transaction by id into database, no database calls for now here
+# Endpoint to CREATE a transaction
 @app.post("/transactions/")
 async def create_transaction(stock_id: int, portfolio_id: int, stock_amount: int, db: Session = Depends(get_db)):
     # Check if stock and portfolio exist
@@ -151,6 +150,7 @@ async def create_transaction(stock_id: int, portfolio_id: int, stock_amount: int
     db.refresh(new_transaction)
     return new_transaction
 
+# Endpoint to READ transaction data. 
 @app.get("/transactions/")
 async def get_transactions(db: Session = Depends(get_db)):
     try:
@@ -159,10 +159,27 @@ async def get_transactions(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"Transaction data not found, {e}")
 
-# TODO: app.put("/portfolio/id") -> muokkaa portfolion total_value niin että laskee kaikkien transactioiden hinnat
+# Endpoint to READ transaction by ID 
+@app.get("/transactions/{id}") 
+async def get_transaction(id: int, db: Session = Depends(get_db)):
+    transaction = db.query(models.Transaction).filter(models.Transaction.id == id).first()
+    
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    return transaction
 
-# TODO: app.delete("/transaction/id") -> Tulee poistaa kaikki transactiot, jotka liittyy kyseiseen portfolioon
-
+# Enpoint DELETES a tranaction by ID number. 
+@app.delete("/transactions/{id}") #taitaa toimia
+async def delete_transaction_item(transaction_id: int, db: Session = Depends(get_db)):
+    transaction_item = db.query(models.Transaction).filter(models.Transaction.id == transaction_id).first()
+    if transaction_item:
+        db.delete(transaction_item)
+        db.commit()
+        db.refresh(transaction_id)
+        return {"message": "Transaction item deleted successfully"}
+    else:
+        raise HTTPException(status_code=404, detail="Transaction item not found")
+    
 # TODO: transaktioiden osto ja myynti toiminto järkevästi -> tyyppi buy sell tai transaktioiden mukaan myynti.  
-
+# TODO: Tulee poistaa kaikki transactiot, jotka liittyy kyseiseen portfolioon
 
