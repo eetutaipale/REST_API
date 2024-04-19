@@ -10,12 +10,11 @@ from dotenv import load_dotenv
 load_dotenv()
 TOK_API_TOKEN = os.getenv("TOK_API_TOKEN")
 
-
 def fetch_api_data() -> list:
     print("\nFetching API data form stockapi.org . . . ")
     print("Token for api : ", TOK_API_TOKEN)
     try:
-        stock_tickers_list = ["AAPL,TSLA,MSFT"] #, "KO,NVDA,GOOG", "AMZN,LLY,JPM" <- lisää nämä kun tarvitaan enemmän tietoja
+        stock_tickers_list = ["AAPL,TSLA,MSFT","KO,NVDA,GOOG","AMZN,LLY,JPM"] #, "KO,NVDA,GOOG", "AMZN,LLY,JPM" <- lisää nämä kun tarvitaan enemmän tietoja
         stock_data_list = []
         table_length = get_table_length('stock')
         print("\nLength of 'stock_data' table:", table_length)
