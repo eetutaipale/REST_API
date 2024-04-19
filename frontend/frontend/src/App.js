@@ -7,33 +7,26 @@ import ListItemText from '@mui/material/ListItemText';
 import AppBar from '@mui/material/AppBar';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
-import { fetchData } from './executions/get';
-import DataList from './Datalist';
-// Icon Imports
-import { SiApple, SiTesla, SiNvidia, SiMicrosoft, SiAmazon, SiGoogle, SiCocacola } from "react-icons/si";
-
+import { findStockNameById } from './executions/stockUtils';
+import { getIconByTicker } from './executions/logos';
+import { fetchData, buyStock, createPortfolio } from './executions/get';  
 // Custom Row Component for My Stocks Page
-const MyStockRow = ({ icon, name, change, value, volume }) => {
-  // Determine the class for the value based on the change
-  const valueClass = change.includes('+') ? 'positive' : 'negative';
-
+const MyStockRow = ({ stockId, stock_amount, purchase_date, exchangeData }) => {
+  const stockName = findStockNameById(stockId, exchangeData);
   return (
     <div className="excel-row">
       <div className="excel-cell">
-        <div className="icon">{icon}</div>
-        <div className="name">{name}</div>
+        <div className="name">{stockName}</div>
       </div>
-      <div className={`excel-cell ${valueClass}`}>{change}</div>
-      <div className="excel-cell">{value}</div>
-      <div className="excel-cell">{volume}</div>
+      <div className="excel-cell">{stock_amount}</div>
+      <div className="excel-cell">{purchase_date}</div>
     </div>
   );
 };
 
 // Custom Row Component for Exchange Page
-const StockRow = ({ icon, name, change, value }) => {
-  // Determine the class for the value based on the change
-  const valueClass = change.includes('+') ? 'positive' : 'negative';
+const StockRow = ({icon, name, change, value, onBuy }) => {
+  const valueClass = change.includes('-') ? 'negative' : 'positive';
 
   return (
     <div className="excel-row">
@@ -43,22 +36,74 @@ const StockRow = ({ icon, name, change, value }) => {
       </div>
       <div className={`excel-cell ${valueClass}`}>{change}</div>
       <div className="excel-cell">{value}</div>
+      <div className="excel-cell">
+        <button onClick={onBuy}>Buy</button>
+      </div>
+    </div>
+  );
+};
+const LatestStocks = ({ stocks }) => {
+  // Find the most recent date
+  const mostRecentDate = stocks.reduce((maxDate, stock) => {
+    return stock.date > maxDate ? stock.date : maxDate;
+  }, '');
+
+  // Filter stocks for the most recent date
+  const latestStocks = stocks.filter(stock => stock.date === mostRecentDate);
+
+  return (
+    <div>
+      {latestStocks.map(stock => (
+        <StockRow
+          key={stock.id}
+          icon={getIconByTicker(stock.ticker)}
+          name={stock.name}
+          change={`$${((stock.price_today - stock.last_days_price) / stock.last_days_price * 100).toFixed(3)}%`}
+          value={`$${stock.price_today}`}
+          onBuy={() => console.log('Buy button clicked for', stock.name)}
+        />
+      ))}
     </div>
   );
 };
 
 function App() {
   const [currentPage, setCurrentPage] = useState('myStocks');
-  const [data, setData] = useState(null);
+  const [exchangeData, setExchangeData] = useState([]);
+  const [myStocks, setMyStocks] = useState([]);
+  const [portfolioId, setPortfolioId] = useState(null);
+  const [transactionData, settra] = useState([]);
   const changePage = (page) => {
     setCurrentPage(page);
   };
+  
+
+
+  
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        const responseData = await fetchData('stock/'); // Call the fetchData function with the endpoint
-        console.log(responseData);
-        setData(responseData);
+        const exchangeResponse = await fetchData('stock/'); // Fetch exchange data
+        console.log(exchangeResponse);
+        setExchangeData(exchangeResponse);
+
+        const transactionresponse = await fetchData('transactions/'); // Fetch exchange data
+        console.log(transactionresponse);
+        settra(transactionresponse);
+
+        const myStocksResponse = await fetchData('portfolios/'); // Fetch user's stocks
+        console.log(myStocksResponse);
+        setMyStocks(myStocksResponse);
+
+
+        // Fetch or create user's portfolio and get the ID
+        const portfolioResponse = await fetchData('portfolios/');
+        if (portfolioResponse.length > 0) {
+          setPortfolioId(portfolioResponse[0].id);
+        } else {
+          const newPortfolioResponse = await createPortfolio(1000); // Initial portfolio value: $1000
+          setPortfolioId(newPortfolioResponse.id);
+        }
       } catch (error) {
         console.error('Error fetching initial data:', error);
       }
@@ -66,114 +111,71 @@ function App() {
 
     fetchInitialData();
   }, []);
-  // Uncomment the following code when implementing data fetching from backend
-  /*
-  const [stocksData, setStocksData] = useState([]);
-
-  useEffect(() => {
-    // Fetch data from the backend
-    fetch('http://your-backend-url/api/stocks')
-      .then(response => response.json())
-      .then(data => {
-        setStocksData(data); // Update stocks data state with fetched data
-      })
-      .catch(error => console.error('Error fetching stocks data:', error));
-  }, []); // Empty dependency array to ensure useEffect only runs once
-  */
-
+  
+  
+  
   const renderPage = () => {
     if (currentPage === 'exchangeRates') {
       return (
         <Container>
-          <Typography variant="h4">Stocks</Typography>
+          <Typography variant="h4">Exchange Rates</Typography>
           <div className="excel-table">
             <div className="excel-row header">
               <div className="excel-cell">Name</div>
               <div className="excel-cell">Daily Change</div>
               <div className="excel-cell">Value</div>
+              <div className="excel-cell">Actions</div>
             </div>
-      
-            {/* 
-            {stocksData.map(stock => (
-              <StockRow
-                key={stock.id}
-                icon={<img src={stock.iconUrl} alt={stock.name} />} // Assuming the backend returns the icon URL
-                name={stock.name}
-                change={stock.dailyChange}
-                value={stock.value}
-              />
-            ))}
-            */}
-            <StockRow icon={<SiApple size={24} />} name="Apple" change="+2.5%" value="$150" />
-            <StockRow icon={<SiTesla size={24} />} name="Tesla" change="+3.2%" value="$700" />
-            <StockRow icon={<SiNvidia size={24} />} name="Nvidia" change="+1.8%" value="$300" />
-            <StockRow icon={<SiMicrosoft size={24} />} name="Microsoft" change="+1.0%" value="$250" />
-            <StockRow icon={<SiAmazon size={24} />} name="Amazon" change="+2.7%" value="$3300" />
-            <StockRow icon={<SiGoogle size={24} />} name="Google" change="+1.5%" value="$2800" />
-            <StockRow icon={<SiCocacola size={24} />} name="Coca-Cola" change="-0.3%" value="$50" />
+            <LatestStocks stocks={exchangeData} />
           </div>
         </Container>
       );
     } else if (currentPage === 'myStocks') {
-      // Mock user's stocks data
-      const userStocks = [
-        { icon: <SiApple size={24} />, name: "Apple", change: "+2.5%", value: "$150", volume: 10 },
-        { icon: <SiNvidia size={24} />, name: "Nvidia", change: "+1.8%", value: "$300", volume: 15 },
-        { icon: <SiGoogle size={24} />, name: "Google", change: "+1.5%", value: "$2800", volume: 5 }
-      ];
-
       return (
         <Container>
           <Typography variant="h4">My Stocks</Typography>
           <div className="excel-table">
             <div className="excel-row header">
               <div className="excel-cell">Name</div>
-              <div className="excel-cell">Daily Change</div>
-              <div className="excel-cell">Value</div>
-              <div className="excel-cell">Volume</div>
+              <div className="excel-cell">Stock amount</div>
+              <div className="excel-cell">Purchase date</div>
+              
             </div>
-            {userStocks.map((stock, index) => (
-              <MyStockRow key={index} {...stock} />
+            {transactionData.map((transaction) => (
+              <MyStockRow
+              key={transaction.id}
+              stockId={transaction.stock_id}
+              stock_amount={transaction.stock_amount}
+              purchase_date={transaction.purchase_date}
+              exchangeData={exchangeData}
+              
+            />
             ))}
           </div>
         </Container>
       );
-    }
+    } 
   };
 
   return (
-    <div>
-      <h1>Data from Backend:</h1>
-      {data ? (
-        <DataList dataList={data} />
-      ) : (
-        <p>Loading...</p>
-      )}
+    <div className="App">
+      <AppBar position="static">
+      </AppBar>
+      <Drawer variant="permanent">
+        <List>
+          <ListItem button onClick={() => changePage('myStocks')}>
+          <ListItemText primary="My Stocks" />
+          </ListItem>
+          <ListItem button onClick={() => changePage('exchangeRates')}>
+            <ListItemText primary="Exchange Rates" />
+          </ListItem>
+        </List>
+      </Drawer>
+      <main>
+        {renderPage()}
+      </main>
     </div>
   );
 }
 
 export default App;
-/* 
-return (
-  <div className="App">
-    
-    <AppBar position="static">
-    </AppBar>
-    <Drawer variant="permanent">
-      <List>
-        <ListItem button onClick={() => changePage('myStocks')}>
-          <ListItemText primary="My Stocks" />
-        </ListItem>
-        <ListItem button onClick={() => changePage('exchangeRates')}>
-          <ListItemText primary="Exchange Rates" />
-        </ListItem>
-      </List>
-    </Drawer>
-    <main>
-      {renderPage()}
-    </main>
-  </div>
-  
-);
-*/
