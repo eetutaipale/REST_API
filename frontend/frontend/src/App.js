@@ -9,20 +9,8 @@ import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { findStockNameById } from './executions/stockUtils';
 import { getIconByTicker } from './executions/logos';
-import { fetchData, buyStock, createPortfolio } from './executions/get';  
-// Custom Row Component for My Stocks Page
-const MyStockRow = ({ stockId, stock_amount, purchase_date, exchangeData }) => {
-  const stockName = findStockNameById(stockId, exchangeData);
-  return (
-    <div className="excel-row">
-      <div className="excel-cell">
-        <div className="name">{stockName}</div>
-      </div>
-      <div className="excel-cell">{stock_amount}</div>
-      <div className="excel-cell">{purchase_date}</div>
-    </div>
-  );
-};
+import { fetchData, buyStock, createPortfolio, SellStock } from './executions/get';  
+
 
 // Custom Row Component for Exchange Page
 const StockRow = ({icon, name, change, value, onBuy }) => {
@@ -42,57 +30,96 @@ const StockRow = ({icon, name, change, value, onBuy }) => {
     </div>
   );
 };
-const LatestStocks = ({ stocks }) => {
-  // Find the most recent date
-  const mostRecentDate = stocks.reduce((maxDate, stock) => {
-    return stock.date > maxDate ? stock.date : maxDate;
-  }, '');
 
-  // Filter stocks for the most recent date
-  const latestStocks = stocks.filter(stock => stock.date === mostRecentDate);
 
-  return (
-    <div>
-      {latestStocks.map(stock => (
-        <StockRow
-          key={stock.id}
-          icon={getIconByTicker(stock.ticker)}
-          name={stock.name}
-          change={`$${((stock.price_today - stock.last_days_price) / stock.last_days_price * 100).toFixed(3)}%`}
-          value={`$${stock.price_today}`}
-          onBuy={() => console.log('Buy button clicked for', stock.name)}
-        />
-      ))}
-    </div>
-  );
-};
 
+// Function component to handle the application logic
 function App() {
-  const [currentPage, setCurrentPage] = useState('myStocks');
+  // State variables
+  const [currentPage, setCurrentPage] = useState('exchangeRates');
   const [exchangeData, setExchangeData] = useState([]);
   const [myStocks, setMyStocks] = useState([]);
   const [portfolioId, setPortfolioId] = useState(null);
   const [transactionData, settra] = useState([]);
+  const [portfolioName, setPortfolioName] = useState('');
+  const [filteredTransactions, setFilteredTransactions] = useState([]);
+  // Function to handle portfolio name change
+  const handlePortfolioChange = (e) => {
+    setPortfolioName(e.target.value);
+  };
+  // Function to change the current page
   const changePage = (page) => {
     setCurrentPage(page);
   };
+  // Function to search for portfolio ID based on portfolio name
+  const handleSearch = () => {
+    const portfolioId = findPortfolioIdByName(portfolioName);
+  };
+  // Function to find portfolio ID by name and filter transactions
+  const findPortfolioIdByName = (portfolioName) => {
+    const portfolio = myStocks.find(portfolio => portfolio.portfolio_name === portfolioName);   
+    const filtered = transactionData.filter(transaction => transaction.portfolio_id === portfolio.id);
+    setFilteredTransactions(filtered);
+  };
+    
+    
   
-
-
-  
+  // Custom Row Component for My Stocks Page
+  const MyStockRow = ({ stockId, stock_amount, purchase_date, exchangeData, SellStock}) => {
+    const stockName = findStockNameById(stockId, exchangeData);
+    
+    return (
+      <div className="excel-row">
+        <div className="excel-cell">
+          <div className="name">{stockName}</div>
+        </div>
+        <div className="excel-cell">{stock_amount}</div>
+        <div className="excel-cell">{purchase_date}</div>
+        <div className="excel-cell">
+        <button onClick={SellStock}>Sell</button>
+    </div>
+      </div>
+    );
+  };
+  // Function to handle selling stocks
+  const SellStocks = async (transactionId) => {
+    console.log("onnistui")
+    try {
+      await SellStock(transactionId);
+      // Fetch updated transaction data after selling stock
+      const updatedTransactionData = await fetchData('transactions/');
+      setFilteredTransactions(updatedTransactionData);
+    } catch (error) {
+      console.error('Error selling stock:', error);
+      throw error;
+    }
+  };
+  // Function to handle buying stocks
+  const BuyStocks = async ({ stockId: stockId, portfolioId: portfolioId, amount: amount }) => {
+    try {
+      buyStock({ stockId: stockId, portfolioId: 1, amount: 1 })
+      // Fetch updated transaction data after buying stock
+      const updatedTransactionData = await fetchData('transactions/');
+      setFilteredTransactions(updatedTransactionData);
+    } catch (error) {
+      console.error('Error buying stock:', error);
+      throw error;
+    }
+  };
+  // Fetch initial data when the component mounts
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
         const exchangeResponse = await fetchData('stock/'); // Fetch exchange data
-        console.log(exchangeResponse);
+        
         setExchangeData(exchangeResponse);
 
         const transactionresponse = await fetchData('transactions/'); // Fetch exchange data
-        console.log(transactionresponse);
+        
         settra(transactionresponse);
 
         const myStocksResponse = await fetchData('portfolios/'); // Fetch user's stocks
-        console.log(myStocksResponse);
+        
         setMyStocks(myStocksResponse);
 
 
@@ -111,9 +138,33 @@ function App() {
 
     fetchInitialData();
   }, []);
+  // Component to display latest stock data
+  const LatestStocks = ({ stocks }) => {
+    // Find the most recent date
+    const mostRecentDate = stocks.reduce((maxDate, stock) => {
+      return stock.date > maxDate ? stock.date : maxDate;
+    }, '');
   
+    // Filter stocks for the most recent date
+    const latestStocks = stocks.filter(stock => stock.date === mostRecentDate);
   
+    return (
+      <div>
+        {latestStocks.map(stock => (
+          <StockRow
+            key={stock.id}
+            icon={getIconByTicker(stock.ticker)}
+            name={stock.name}
+            change={`$${((stock.price_today - stock.last_days_price) / stock.last_days_price * 100).toFixed(3)}%`}
+            value={`$${stock.price_today}`}
+            onBuy={() => { BuyStocks({ stockId: stock.id, portfolioId: 1, amount: 1 }); console.log('Buy button clicked for', stock.name);  }}
+          />
+        ))}
+      </div>
+    );
+  };
   
+  // Function to render the appropriate page content
   const renderPage = () => {
     if (currentPage === 'exchangeRates') {
       return (
@@ -133,30 +184,35 @@ function App() {
     } else if (currentPage === 'myStocks') {
       return (
         <Container>
-          <Typography variant="h4">My Stocks</Typography>
-          <div className="excel-table">
-            <div className="excel-row header">
-              <div className="excel-cell">Name</div>
-              <div className="excel-cell">Stock amount</div>
-              <div className="excel-cell">Purchase date</div>
-              
-            </div>
-            {transactionData.map((transaction) => (
-              <MyStockRow
+        <Typography variant="h4">My Stocks</Typography>
+        <div className="excel-table">
+          <div className="excel-row header">
+            <div className="excel-cell">Name</div>
+            <div className="excel-cell">Stock amount</div>
+            <div className="excel-cell">Purchase date</div>
+            <div className="excel-cell">Actions</div>
+          </div>
+          <div>
+          <input type="text" value={portfolioName} onChange={handlePortfolioChange} placeholder="Enter Portfolio Name" />
+          <button onClick={handleSearch}>Search</button>
+          </div>
+          {filteredTransactions.map((transaction) => (
+            <MyStockRow
               key={transaction.id}
               stockId={transaction.stock_id}
               stock_amount={transaction.stock_amount}
               purchase_date={transaction.purchase_date}
-              exchangeData={exchangeData}
-              
+              exchangeData ={exchangeData}
+              SellStock={() => SellStocks(transaction.id)}
+               // Assuming filteredTransactions is an array of transactions
             />
-            ))}
-          </div>
-        </Container>
+          ))}
+        </div>
+      </Container>
       );
     } 
   };
-
+// Render the main application content
   return (
     <div className="App">
       <AppBar position="static">

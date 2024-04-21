@@ -14,9 +14,10 @@ export const fetchData = async (endpoint) => {
   }
 };
 // TODO: Write your task or comment here
-export const buyStock = async (stockId, portfolioId, amount) => {
+export const buyStock = async ({ stockId, portfolioId, amount }) => {
+
   try {
-    const response = await fetch(`${apiUrl}/buy_stock/`, {
+    const response = await fetch(`${apiUrl}/transactions/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -36,7 +37,26 @@ export const buyStock = async (stockId, portfolioId, amount) => {
     throw error;
   }
 };
-
+export const SellStock = async (transactionId) => {
+  try {
+    const response = await fetch(`${apiUrl}/transactions/${transactionId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        transaction_id: transactionId,
+      }),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to delete transaction');
+    }
+    return response.json();
+  } catch (error) {
+    console.error('Error deleting transaction:', error);
+    throw error;
+  }
+};
 export const createPortfolio = async (portfolioValue) => {
   
   try {

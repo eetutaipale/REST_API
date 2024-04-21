@@ -1,4 +1,5 @@
 
+from urllib import request
 from fastapi import FastAPI, HTTPException, Depends, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -133,7 +134,12 @@ async def delete_portfolio_item(portfolio_id: int, db: Session = Depends(get_db)
     
 # Endpoint to CREATE a transaction
 @app.post("/transactions/")
-async def create_transaction(stock_id: int, portfolio_id: int, stock_amount: int, db: Session = Depends(get_db)):
+async def create_transaction(request_data: dict, db: Session = Depends(get_db)):
+    # Extract data from request body
+    stock_id = request_data.get('stock_id')
+    portfolio_id = request_data.get('portfolio_id')
+    stock_amount = request_data.get('stock_amount')
+
     # Check if stock and portfolio exist
     stock = db.query(models.Stock).filter(models.Stock.id == stock_id).first()
     if not stock:
@@ -142,6 +148,7 @@ async def create_transaction(stock_id: int, portfolio_id: int, stock_amount: int
     portfolio = db.query(models.Portfolio).filter(models.Portfolio.id == portfolio_id).first()
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
+
     today = datetime.date.today()
     # Create a new transaction
     new_transaction = models.Transaction(stock_id=stock_id, portfolio_id=portfolio_id, stock_amount=stock_amount, purchase_date=today)
@@ -149,7 +156,6 @@ async def create_transaction(stock_id: int, portfolio_id: int, stock_amount: int
     db.commit()
     db.refresh(new_transaction)
     return new_transaction
-
 # Endpoint to READ transaction data. 
 @app.get("/transactions/")
 async def get_transactions(db: Session = Depends(get_db)):
@@ -170,12 +176,12 @@ async def get_transaction(id: int, db: Session = Depends(get_db)):
 
 # Enpoint DELETES a tranaction by ID number. 
 @app.delete("/transactions/{id}") #taitaa toimia
-async def delete_transaction_item(transaction_id: int, db: Session = Depends(get_db)):
+async def delete_transaction_item(request_data: dict, db: Session = Depends(get_db)):
+    transaction_id = request_data.get('transaction_id')
     transaction_item = db.query(models.Transaction).filter(models.Transaction.id == transaction_id).first()
     if transaction_item:
         db.delete(transaction_item)
         db.commit()
-        db.refresh(transaction_id)
         return {"message": "Transaction item deleted successfully"}
     else:
         raise HTTPException(status_code=404, detail="Transaction item not found")
