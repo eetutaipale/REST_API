@@ -182,6 +182,7 @@ async def delete_transaction_item(request_data: dict, db: Session = Depends(get_
     if transaction_item:
         db.delete(transaction_item)
         db.commit()
+        #db.refresh(transaction_item)
         return {"message": "Transaction item deleted successfully"}
     else:
         raise HTTPException(status_code=404, detail="Transaction item not found")
