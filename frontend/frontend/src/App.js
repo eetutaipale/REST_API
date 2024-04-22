@@ -10,6 +10,7 @@ import Container from '@mui/material/Container';
 import { findStockNameById } from './executions/stockUtils';
 import { getIconByTicker } from './executions/logos';
 import { fetchData, buyStock, createPortfolio, SellStock } from './executions/get';  
+import Notification from './executions/Notification'
 
 
 
@@ -25,101 +26,11 @@ function App() {
   const [transactionData, settra] = useState([]);
   const [portfolioName, setPortfolioName] = useState('');
   const [filteredTransactions, setFilteredTransactions] = useState([]);
-  const [buyAmount, setBuyAmount] = useState('')
-  // Function to handle portfolio name change
-  const handlePortfolioChange = (e) => {
-    setPortfolioName(e.target.value);
-  };
-  const handleBuyAmount = (e) => {
-    setBuyAmount(e.target.value);
-    console.log(e.target.value);
-  }
-  // Function to change the current page
-  const changePage = (page) => {
-    setCurrentPage(page);
-  };
-  // Function to search for portfolio ID based on portfolio name
-  const handleSearch = () => {
-    const portfolioId = findPortfolioIdByName(portfolioName);
-  };
-  // Function to find portfolio ID by name and filter transactions
-  const findPortfolioIdByName = (portfolioName) => {
-    const portfolio = myStocks.find(portfolio => portfolio.portfolio_name === portfolioName);   
-    const filtered = transactionData.filter(transaction => transaction.portfolio_id === portfolio.id);
-    setFilteredTransactions(filtered);
-  };
-    
-  // Custom Row Component for Exchange Page
-const StockRow = ({icon, name, change, value, buyAmount, onBuy }) => {
-  const valueClass = change.includes('-') ? 'negative' : 'positive';
-
-  return (
-    <div className="excel-row">
-      <div className="excel-cell">
-        <div className="icon">{icon}</div>
-        <div className="name">{name}</div>
-      </div>
-      <div className={`excel-cell ${valueClass}`}>{change}</div>
-      <div className="excel-cell">{value}</div>
-      <div className="excel-cell">
-
-        <input  
-        type="text" 
-        value={buyAmount} 
-        placeholder="Amount" 
-        required
-        onChange={({target}) => setBuyAmount(target.value)}
-        />
-        <button onClick={onBuy}>Buy</button>
-
-      </div>
-    </div>
-  );
-};
-
   
-  // Custom Row Component for My Stocks Page
-  const MyStockRow = ({ stockId, stock_amount, purchase_date, exchangeData, SellStock}) => {
-    const stockName = findStockNameById(stockId, exchangeData);
-    
-    return (
-      <div className="excel-row">
-        <div className="excel-cell">
-          <div className="name">{stockName}</div>
-        </div>
-        <div className="excel-cell">{stock_amount}</div>
-        <div className="excel-cell">{purchase_date}</div>
-        <div className="excel-cell">
-        <button onClick={SellStock}>Sell</button>
-    </div>
-      </div>
-    );
-  };
-  // Function to handle selling stocks
-  const SellStocks = async (transactionId) => {
-    console.log("onnistui")
-    try {
-      await SellStock(transactionId);
-      // Fetch updated transaction data after selling stock
-      const updatedTransactionData = await fetchData('transactions/');
-      setFilteredTransactions(updatedTransactionData);
-    } catch (error) {
-      console.error('Error selling stock:', error);
-      throw error;
-    }
-  };
-  // Function to handle buying stocks
-  const BuyStocks = async ({ stockId: stockId, portfolioId: portfolioId, amount: amount }) => {
-    try {
-      buyStock({ stockId: stockId, portfolioId: 1, amount: amount })
-      // Fetch updated transaction data after buying stock
-      const updatedTransactionData = await fetchData('transactions/');
-      setFilteredTransactions(updatedTransactionData);
-    } catch (error) {
-      console.error('Error buying stock:', error);
-      throw error;
-    }
-  };
+  const [errorMessage, setErrorMessage] = useState(null)
+  const [validMessage, setMessage] = useState(null)
+
+
   // Fetch initial data when the component mounts
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -152,6 +63,116 @@ const StockRow = ({icon, name, change, value, buyAmount, onBuy }) => {
 
     fetchInitialData();
   }, []);
+
+  // Function to handle portfolio name change
+  const handlePortfolioChange = (e) => {
+    setPortfolioName(e.target.value);
+  };
+
+  // Function to search for portfolio ID based on portfolio name
+  const handleSearch = () => {
+    const portfolioId = findPortfolioIdByName(portfolioName);
+  };
+
+  // Function to change the current page
+  const changePage = (page) => {
+    setCurrentPage(page);
+  };
+
+  // Function to find portfolio ID by name and filter transactions
+  const findPortfolioIdByName = (portfolioName) => {
+    const portfolio = myStocks.find(portfolio => portfolio.portfolio_name === portfolioName);   
+    const filtered = transactionData.filter(transaction => transaction.portfolio_id === portfolio.id);
+    setFilteredTransactions(filtered);
+  };
+
+    
+  // Custom Row Component for Exchange Page
+  const StockRow = ({ icon, name, change, value, onBuy }) => {
+    const [buyAmount, setBuyAmount] = useState('');
+  
+    const valueClass = change.includes('-') ? 'negative' : 'positive';
+  
+    const handleBuy = () => {
+      // Call the onBuy callback with the current buyAmount value
+      onBuy(buyAmount);
+      // Clear the buyAmount state after buying
+      setBuyAmount('');
+    };
+  
+    return (
+      <div className="excel-row">
+        <div className="excel-cell">
+          <div className="icon">{icon}</div>
+          <div className="name">{name}</div>
+        </div>
+        <div className={`excel-cell ${valueClass}`}>{change}</div>
+        <div className="excel-cell">{value}</div>
+        <div className="excel-cell">
+          <input  
+            type="text" 
+            value={buyAmount} 
+            placeholder="Amount" 
+            onChange={({ target }) => setBuyAmount(target.value)}
+          />
+          <button onClick={handleBuy}>Buy</button>
+        </div>
+      </div>
+    );
+  };
+  
+  // Custom Row Component for My Stocks Page
+  const MyStockRow = ({ stockId, stock_amount, purchase_date, exchangeData, SellStock}) => {
+    const stockName = findStockNameById(stockId, exchangeData);
+    
+    return (
+      <div className="excel-row">
+        <div className="excel-cell">
+          <div className="name">{stockName}</div>
+        </div>
+        <div className="excel-cell">{stock_amount}</div>
+        <div className="excel-cell">{purchase_date}</div>
+        <div className="excel-cell">
+        <button onClick={SellStock}>Sell</button>
+    </div>
+      </div>
+    );
+  };
+  // Function to handle selling stocks
+  const SellStocks = async (transactionId) => {
+    console.log("onnistui")
+    try {
+      await SellStock(transactionId);
+      // Fetch updated transaction data after selling stock
+      const updatedTransactionData = await fetchData('transactions/');
+      setFilteredTransactions(updatedTransactionData);
+    } catch (error) {
+      console.error('Error selling stock:', error);
+      throw error;
+    }
+  };
+
+  // Function to handle buying stocks
+  const BuyStocks = async ({ stockId: stockId, portfolioId: portfolioId, amount: amount }) => {
+    try {
+      if (amount != null && amount > 0 ){
+        buyStock({ stockId: stockId, portfolioId: 1, amount: amount })
+        // Fetch updated transaction data after buying stock
+        const updatedTransactionData = await fetchData('transactions/');
+        setFilteredTransactions(updatedTransactionData);
+      } else {
+        setErrorMessage("Amount input invalid.");
+        <Notification message={errorMessage}/>
+        setErrorMessage(null);
+        
+      }
+
+    } catch (error) {
+      console.error('Error buying stock:', error);
+
+    }
+  };
+
   // Component to display latest stock data
   const LatestStocks = ({ stocks }) => {
     // Find the most recent date
@@ -171,8 +192,7 @@ const StockRow = ({icon, name, change, value, buyAmount, onBuy }) => {
             name={stock.name}
             change={`$${((stock.price_today - stock.last_days_price) / stock.last_days_price * 100).toFixed(3)}%`}
             value={`$${stock.price_today}`}
-            
-            onBuy={() => { BuyStocks({ stockId: stock.id, portfolioId: 1, amount: buyAmount }); 
+            onBuy={(amount) => { BuyStocks({ stockId: stock.id, portfolioId: 1, amount: amount }); 
                   
                   console.log('Buy button clicked for', stock.name);  
                 }}
@@ -180,7 +200,6 @@ const StockRow = ({icon, name, change, value, buyAmount, onBuy }) => {
         )}
       </div>
     );
-
   };
   
   // Function to render the appropriate page content
@@ -232,7 +251,7 @@ const StockRow = ({icon, name, change, value, buyAmount, onBuy }) => {
       );
     } 
   };
-// Render the main application content
+  // Render the main application content
   return (
     <div className="App">
       <AppBar position="static">
