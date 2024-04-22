@@ -37,6 +37,11 @@ export const buyStock = async ({ stockId, portfolioId, amount }) => {
     throw error;
   }
 };
+
+export const Updateportfolio = async ({ stockId, portfolioId, amount }) => {
+
+}
+
 export const SellStock = async (transactionId) => {
   try {
     const response = await fetch(`${apiUrl}/transactions/${transactionId}`, {

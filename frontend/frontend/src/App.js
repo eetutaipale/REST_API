@@ -9,7 +9,7 @@ import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { findStockNameById } from './executions/stockUtils';
 import { getIconByTicker } from './executions/logos';
-import { fetchData, buyStock, createPortfolio, SellStock } from './executions/get';  
+import { fetchData, buyStock, createPortfolio, SellStock, Updateportfolio } from './executions/get';  
 import Notification from './executions/Notification'
 
 
@@ -23,7 +23,7 @@ function App() {
   const [exchangeData, setExchangeData] = useState([]);
   const [myStocks, setMyStocks] = useState([]);
   const [portfolioId, setPortfolioId] = useState(null);
-  const [transactionData, settra] = useState([]);
+  const [transactionData, setTransactiondata] = useState([]);
   const [portfolioName, setPortfolioName] = useState('');
   const [filteredTransactions, setFilteredTransactions] = useState([]);
   
@@ -41,7 +41,7 @@ function App() {
 
         const transactionresponse = await fetchData('transactions/'); // Fetch exchange data
         
-        settra(transactionresponse);
+        setTransactiondata(transactionresponse);
 
         const myStocksResponse = await fetchData('portfolios/'); // Fetch user's stocks
         
@@ -63,29 +63,77 @@ function App() {
 
     fetchInitialData();
   }, []);
-
+  // changes the current transactions when you buy or sell a stock by calling handleSeacrch
+  useEffect(() => {
+    if (transactionData.length > 0) {
+      handleSearch();
+    }
+  }, [transactionData]);
   // Function to handle portfolio name change
   const handlePortfolioChange = (e) => {
     setPortfolioName(e.target.value);
   };
 
-  // Function to search for portfolio ID based on portfolio name
+  // function that handles portfolios changes based in input and shows an error meassage if portfolio is not found
   const handleSearch = () => {
-    const portfolioId = findPortfolioIdByName(portfolioName);
+    try {
+      findPortfolioIdByName(portfolioName);
+      setErrorMessage('')
+    } catch (error) {
+      setErrorMessage("Porfolio not found")
+      setFilteredTransactions([])
+      
+    }
   };
 
   // Function to change the current page
   const changePage = (page) => {
     setCurrentPage(page);
   };
+  // Function to that calculates one transactions profit based on todays price
+  const Valuecalculator = (OneTransactions, exchangeData) => {
+  
+    const mostRecentDate = exchangeData.reduce((maxDate, stock) => {
+      return stock.date > maxDate ? stock.date : maxDate;
+    }, '');
+    
+    const latestStocks = exchangeData.filter(stock => stock.date === mostRecentDate);
+    const stock = exchangeData.find(stock => stock.id === OneTransactions.stock_id);
+    const stockOnPurchaseName = latestStocks.find(name => name.name === stock.name) 
+    
+    return stockOnPurchaseName.price_today - stock.price_today
+    }
 
-  // Function to find portfolio ID by name and filter transactions
+  // Function to find portfolio ID by name and searhes the right transactions based on the user
   const findPortfolioIdByName = (portfolioName) => {
-    const portfolio = myStocks.find(portfolio => portfolio.portfolio_name === portfolioName);   
+    
+    const portfolio = myStocks.find(portfolio => portfolio.portfolio_name === portfolioName);
+    setPortfolioId(portfolio.id)
     const filtered = transactionData.filter(transaction => transaction.portfolio_id === portfolio.id);
     setFilteredTransactions(filtered);
   };
+  // Function to that calculates total profit of the users portfolio
+  const Totalvalue = (portfolioId, filteredTransactions, exchangeData) => {
+    let totalStockPrice = 0;
 
+
+    const mostRecentDate = exchangeData.reduce((maxDate, stock) => {
+      return stock.date > maxDate ? stock.date : maxDate;
+    }, '');
+
+    const latestStocks = exchangeData.filter(stock => stock.date === mostRecentDate);
+    filteredTransactions.forEach(transaction => {
+      const stock = exchangeData.find(stock => stock.id === transaction.stock_id);
+      if (stock) {
+        const stockOnPurchaseDate = latestStocks.find(name => name.name === stock.name);
+        if (stockOnPurchaseDate) {
+          totalStockPrice += stockOnPurchaseDate.price_today - stock.price_today;
+        }
+      }
+      
+    })
+    return totalStockPrice
+  }
     
   // Custom Row Component for Exchange Page
   const StockRow = ({ icon, name, change, value, onBuy }) => {
@@ -122,15 +170,16 @@ function App() {
   };
   
   // Custom Row Component for My Stocks Page
-  const MyStockRow = ({ stockId, stock_amount, purchase_date, exchangeData, SellStock}) => {
+  const MyStockRow = ({ stockId, stock_amount, purchase_date, exchangeData, SellStock, value, id}) => {
     const stockName = findStockNameById(stockId, exchangeData);
-    
+    const valueClass = value.includes('-') ? 'negative' : 'positive';
     return (
       <div className="excel-row">
         <div className="excel-cell">
           <div className="name">{stockName}</div>
         </div>
         <div className="excel-cell">{stock_amount}</div>
+        <div className={`excel-cell ${valueClass}`}>{value}</div>
         <div className="excel-cell">{purchase_date}</div>
         <div className="excel-cell">
         <button onClick={SellStock}>Sell</button>
@@ -139,13 +188,14 @@ function App() {
     );
   };
   // Function to handle selling stocks
-  const SellStocks = async (transactionId) => {
+  const SellStocks = async (transactionId, name) => {
     console.log("onnistui")
     try {
       await SellStock(transactionId);
       // Fetch updated transaction data after selling stock
       const updatedTransactionData = await fetchData('transactions/');
-      setFilteredTransactions(updatedTransactionData);
+       setTransactiondata(updatedTransactionData);
+       
     } catch (error) {
       console.error('Error selling stock:', error);
       throw error;
@@ -153,13 +203,15 @@ function App() {
   };
 
   // Function to handle buying stocks
-  const BuyStocks = async ({ stockId: stockId, portfolioId: portfolioId, amount: amount }) => {
+  const BuyStocks = async ({ stockId: stockId, amount: amount }) => {
     try {
       if (amount != null && amount > 0 ){
-        buyStock({ stockId: stockId, portfolioId: 1, amount: amount })
+        console.log(portfolioId)
+        await buyStock({ stockId: stockId, portfolioId: portfolioId, amount: amount })
         // Fetch updated transaction data after buying stock
         const updatedTransactionData = await fetchData('transactions/');
-        setFilteredTransactions(updatedTransactionData);
+        setTransactiondata(updatedTransactionData);
+        handleSearch()
       } else {
         setErrorMessage("Amount input invalid.");
         <Notification message={errorMessage}/>
@@ -174,7 +226,7 @@ function App() {
   };
 
   // Component to display latest stock data
-  const LatestStocks = ({ stocks }) => {
+  const LatestStocks = ( {stocks}, portfolioId ) => {
     // Find the most recent date
     const mostRecentDate = stocks.reduce((maxDate, stock) => {
       return stock.date > maxDate ? stock.date : maxDate;
@@ -190,9 +242,9 @@ function App() {
             key={stock.id}
             icon={getIconByTicker(stock.ticker)} 
             name={stock.name}
-            change={`$${((stock.price_today - stock.last_days_price) / stock.last_days_price * 100).toFixed(3)}%`}
-            value={`$${stock.price_today}`}
-            onBuy={(amount) => { BuyStocks({ stockId: stock.id, portfolioId: 1, amount: amount }); 
+            change={`$${((stock.price_today - stock.last_days_price) / stock.last_days_price * 100).toFixed(2)}%`}
+            value={`$${stock.price_today.toFixed(2)}`}
+            onBuy={(amount) => { BuyStocks({ stockId: stock.id, portfolioId: portfolioId, amount: amount }); 
                   
                   console.log('Buy button clicked for', stock.name);  
                 }}
@@ -228,12 +280,14 @@ function App() {
           <div className="excel-row header">
             <div className="excel-cell">Name</div>
             <div className="excel-cell">Stock amount</div>
+            <div className="excel-cell">Profit</div>
             <div className="excel-cell">Purchase date</div>
             <div className="excel-cell">Actions</div>
           </div>
           <div>
           <input type="text" value={portfolioName} onChange={handlePortfolioChange} placeholder="Enter Portfolio Name" />
-          <button onClick={handleSearch}>Search</button>
+          <button onClick={ handleSearch}>Search</button>
+          {errorMessage && <div className="error"> {errorMessage} </div>}
           </div>
           {filteredTransactions.map((transaction) => (
             <MyStockRow
@@ -242,10 +296,14 @@ function App() {
               stock_amount={transaction.stock_amount}
               purchase_date={transaction.purchase_date}
               exchangeData ={exchangeData}
-              SellStock={() => SellStocks(transaction.id)}
-               // Assuming filteredTransactions is an array of transactions
+              SellStock={() => SellStocks(transaction.id, portfolioId )}
+              value={`$${Valuecalculator(transaction, exchangeData)}`}
+              
             />
           ))}
+        </div>
+        <div>
+        <div className="excel-cell">Total Profit: {Totalvalue(portfolioId, filteredTransactions, exchangeData)}</div>
         </div>
       </Container>
       );
