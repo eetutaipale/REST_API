@@ -12,24 +12,6 @@ import { getIconByTicker } from './executions/logos';
 import { fetchData, buyStock, createPortfolio, SellStock } from './executions/get';  
 
 
-// Custom Row Component for Exchange Page
-const StockRow = ({icon, name, change, value, onBuy }) => {
-  const valueClass = change.includes('-') ? 'negative' : 'positive';
-
-  return (
-    <div className="excel-row">
-      <div className="excel-cell">
-        <div className="icon">{icon}</div>
-        <div className="name">{name}</div>
-      </div>
-      <div className={`excel-cell ${valueClass}`}>{change}</div>
-      <div className="excel-cell">{value}</div>
-      <div className="excel-cell">
-        <button onClick={onBuy}>Buy</button>
-      </div>
-    </div>
-  );
-};
 
 
 
@@ -43,10 +25,15 @@ function App() {
   const [transactionData, settra] = useState([]);
   const [portfolioName, setPortfolioName] = useState('');
   const [filteredTransactions, setFilteredTransactions] = useState([]);
+  const [buyAmount, setBuyAmount] = useState('')
   // Function to handle portfolio name change
   const handlePortfolioChange = (e) => {
     setPortfolioName(e.target.value);
   };
+  const handleBuyAmount = (e) => {
+    setBuyAmount(e.target.value);
+    console.log(e.target.value);
+  }
   // Function to change the current page
   const changePage = (page) => {
     setCurrentPage(page);
@@ -62,7 +49,34 @@ function App() {
     setFilteredTransactions(filtered);
   };
     
-    
+  // Custom Row Component for Exchange Page
+const StockRow = ({icon, name, change, value, buyAmount, onBuy }) => {
+  const valueClass = change.includes('-') ? 'negative' : 'positive';
+
+  return (
+    <div className="excel-row">
+      <div className="excel-cell">
+        <div className="icon">{icon}</div>
+        <div className="name">{name}</div>
+      </div>
+      <div className={`excel-cell ${valueClass}`}>{change}</div>
+      <div className="excel-cell">{value}</div>
+      <div className="excel-cell">
+
+        <input  
+        type="text" 
+        value={buyAmount} 
+        placeholder="Amount" 
+        required
+        onChange={({target}) => setBuyAmount(target.value)}
+        />
+        <button onClick={onBuy}>Buy</button>
+
+      </div>
+    </div>
+  );
+};
+
   
   // Custom Row Component for My Stocks Page
   const MyStockRow = ({ stockId, stock_amount, purchase_date, exchangeData, SellStock}) => {
@@ -97,7 +111,7 @@ function App() {
   // Function to handle buying stocks
   const BuyStocks = async ({ stockId: stockId, portfolioId: portfolioId, amount: amount }) => {
     try {
-      buyStock({ stockId: stockId, portfolioId: 1, amount: 1 })
+      buyStock({ stockId: stockId, portfolioId: 1, amount: amount })
       // Fetch updated transaction data after buying stock
       const updatedTransactionData = await fetchData('transactions/');
       setFilteredTransactions(updatedTransactionData);
@@ -150,18 +164,23 @@ function App() {
   
     return (
       <div>
-        {latestStocks.map(stock => (
+        {latestStocks.map(stock => 
           <StockRow
             key={stock.id}
-            icon={getIconByTicker(stock.ticker)}
+            icon={getIconByTicker(stock.ticker)} 
             name={stock.name}
             change={`$${((stock.price_today - stock.last_days_price) / stock.last_days_price * 100).toFixed(3)}%`}
             value={`$${stock.price_today}`}
-            onBuy={() => { BuyStocks({ stockId: stock.id, portfolioId: 1, amount: 1 }); console.log('Buy button clicked for', stock.name);  }}
+            
+            onBuy={() => { BuyStocks({ stockId: stock.id, portfolioId: 1, amount: buyAmount }); 
+                  
+                  console.log('Buy button clicked for', stock.name);  
+                }}
           />
-        ))}
+        )}
       </div>
     );
+
   };
   
   // Function to render the appropriate page content
@@ -177,6 +196,7 @@ function App() {
               <div className="excel-cell">Value</div>
               <div className="excel-cell">Actions</div>
             </div>
+            
             <LatestStocks stocks={exchangeData} />
           </div>
         </Container>
