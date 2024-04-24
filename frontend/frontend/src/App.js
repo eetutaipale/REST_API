@@ -112,11 +112,9 @@ function App() {
     const filtered = transactionData.filter(transaction => transaction.portfolio_id === portfolio.id);
     setFilteredTransactions(filtered);
   };
-
-  const Total = (portfolioId, filteredTransactions, exchangeData) => {
+ //TODO: Send put method to send server data amount the stock value
+  const TotalValue = (filteredTransactions, exchangeData) => {
     let totalStockPrice = 0;
-
-
     const mostRecentDate = exchangeData.reduce((maxDate, stock) => {
       return stock.date > maxDate ? stock.date : maxDate;
     }, '');
@@ -125,17 +123,35 @@ function App() {
     filteredTransactions.forEach(transaction => {
       const stock = exchangeData.find(stock => stock.id === transaction.stock_id);
       if (stock) {
+        console.log(stock.price_today)
         const stockOnPurchaseDate = latestStocks.find(name => name.name === stock.name);
         if (stockOnPurchaseDate) {
-          totalStockPrice += stockOnPurchaseDate.price_today - stock.price_today;
+          
+          totalStockPrice += stockOnPurchaseDate.price_today * transaction.stock_amount
+          
         }
       }
       
     })
     return totalStockPrice
   }
+  const SinglestockValue = (singletransaction, exchangeData) => {
+    const mostRecentDate = exchangeData.reduce((maxDate, stock) => {
+      return stock.date > maxDate ? stock.date : maxDate;
+    }, '');
+
+    const latestStocks = exchangeData.filter(stock => stock.date === mostRecentDate);
+    const stock = exchangeData.find(stock => stock.id === singletransaction.stock_id);
+    const stockOnPurchaseName = latestStocks.find(name => name.name === stock.name) 
+
+    
+    return stockOnPurchaseName.price_today * singletransaction.stock_amount
+    }
+   
+
+  
   // Function to that calculates total profit of the users portfolio
-  const Totalvalue = (portfolioId, filteredTransactions, exchangeData) => {
+  const Totalprofit = (portfolioId, filteredTransactions, exchangeData) => {
     let totalStockPrice = 0;
 
 
@@ -192,16 +208,17 @@ function App() {
   };
   
   // Custom Row Component for My Stocks Page
-  const MyStockRow = ({ stockId, stock_amount, purchase_date, exchangeData, SellStock, value, id}) => {
+  const MyStockRow = ({ stockId, stock_amount, purchase_date, exchangeData, SellStock, profit, value}) => {
     const stockName = findStockNameById(stockId, exchangeData);
-    const valueClass = value.includes('-') ? 'negative' : 'positive';
+    const valueClass = profit.includes('-') ? 'negative' : 'positive';
     return (
       <div className="excel-row">
         <div className="excel-cell">
           <div className="name">{stockName}</div>
         </div>
         <div className="excel-cell">{stock_amount}</div>
-        <div className={`excel-cell ${valueClass}`}>{value}</div>
+        <div className="excel-cell">{value}</div>
+        <div className={`excel-cell ${valueClass}`}>{profit}</div>
         <div className="excel-cell">{purchase_date}</div>
         <div className="excel-cell">
         <button onClick={SellStock}>Sell</button>
@@ -302,6 +319,7 @@ function App() {
           <div className="excel-row header">
             <div className="excel-cell">Name</div>
             <div className="excel-cell">Stock amount</div>
+            <div className="excel-cell">Value</div>
             <div className="excel-cell">Profit</div>
             <div className="excel-cell">Purchase date</div>
             <div className="excel-cell">Actions</div>
@@ -311,6 +329,9 @@ function App() {
           <button onClick={ handleSearch}>Search</button>
           {errorMessage && <div className="error"> {errorMessage} </div>}
           </div>
+          <div>
+          <button onClick={() => TotalValue(filteredTransactions, exchangeData)}>Search</button>
+          </div>
           {filteredTransactions.map((transaction) => (
             <MyStockRow
               key={transaction.id}
@@ -319,13 +340,16 @@ function App() {
               purchase_date={transaction.purchase_date}
               exchangeData ={exchangeData}
               SellStock={() => SellStocks(transaction.id, portfolioId )}
-              value={`$${Valuecalculator(transaction, exchangeData)}`}
+              profit={`$${Valuecalculator(transaction, exchangeData)}`}
+              value={`${SinglestockValue(transaction, exchangeData)}$`}
               
             />
           ))}
         </div>
         <div>
-        <div className="excel-cell">Total Profit: {Totalvalue(portfolioId, filteredTransactions, exchangeData)}</div>
+        
+        <div className="excel-cell">Total Value: {TotalValue(filteredTransactions, exchangeData)}</div>
+        <div className="excel-cell">Total Profit: {Totalprofit(portfolioId, filteredTransactions, exchangeData)}</div>
         </div>
       </Container>
       );

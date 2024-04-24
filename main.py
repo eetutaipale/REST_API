@@ -45,7 +45,7 @@ async def populate_database(db: Session = Depends(get_db)):
             stock = models.Stock(**stock_data) #be sure of stock_data model
             db.add(stock)
         db.commit()
-        return {"added stockdata"}
+        return stock_data_list
 
     except Exception as e:
         db.rollback()

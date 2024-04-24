@@ -15,6 +15,10 @@ logger = logging.getLogger(__name__)
 # Database connection parameters
 host1 = "sqlstockserver.database.windows.net"
 host2 = "sqlserverest.database.windows.net" # Old server
+
+database_name = "Stockdb"
+server = os.getenv("server")
+string = f"mssql+pyodbc://@{server}/{database_name}?trusted_connection=yes&driver=ODBC Driver 17 for SQL Server"
 password = os.getenv("password")
 engine_str = URL.create(
     drivername="mssql+pyodbc",
@@ -32,7 +36,7 @@ engine_str = URL.create(
 )
 
 # Engine and sessionmaker
-engine = create_engine(engine_str, echo=True) # Creating an engine object to connect to database
+engine = create_engine(string, echo=True) # Creating an engine object to connect to database
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 metadata = MetaData()
 
