@@ -27,7 +27,7 @@ function App() {
   const [portfolioName, setPortfolioName] = useState('');
   const [filteredTransactions, setFilteredTransactions] = useState([]);
   
-  const [errorMessage, setErrorMessage] = useState(null)
+  const [errorMessage, setErrorMessage] = useState('')
   const [validMessage, setMessage] = useState(null)
 
 
@@ -65,7 +65,7 @@ function App() {
   }, []);
   // changes the current transactions when you buy or sell a stock by calling handleSeacrch
   useEffect(() => {
-    if (transactionData.length > 0) {
+    if (transactionData.length >= 0) {
       handleSearch();
     }
   }, [transactionData]);
@@ -112,6 +112,28 @@ function App() {
     const filtered = transactionData.filter(transaction => transaction.portfolio_id === portfolio.id);
     setFilteredTransactions(filtered);
   };
+
+  const Total = (portfolioId, filteredTransactions, exchangeData) => {
+    let totalStockPrice = 0;
+
+
+    const mostRecentDate = exchangeData.reduce((maxDate, stock) => {
+      return stock.date > maxDate ? stock.date : maxDate;
+    }, '');
+
+    const latestStocks = exchangeData.filter(stock => stock.date === mostRecentDate);
+    filteredTransactions.forEach(transaction => {
+      const stock = exchangeData.find(stock => stock.id === transaction.stock_id);
+      if (stock) {
+        const stockOnPurchaseDate = latestStocks.find(name => name.name === stock.name);
+        if (stockOnPurchaseDate) {
+          totalStockPrice += stockOnPurchaseDate.price_today - stock.price_today;
+        }
+      }
+      
+    })
+    return totalStockPrice
+  }
   // Function to that calculates total profit of the users portfolio
   const Totalvalue = (portfolioId, filteredTransactions, exchangeData) => {
     let totalStockPrice = 0;
