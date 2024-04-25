@@ -37,17 +37,11 @@ function App() {
     const fetchInitialData = async () => {
       try {
         const exchangeResponse = await fetchData('stock/'); // Fetch exchange data
-        
         setExchangeData(exchangeResponse);
-
-        const transactionresponse = await fetchData('transactions/'); // Fetch exchange data
-        
+        const transactionresponse = await fetchData('transactions/'); // Fetch exchange data       
         setTransactiondata(transactionresponse);
-
-        const myStocksResponse = await fetchData('portfolios/'); // Fetch user's stocks
-        
+        const myStocksResponse = await fetchData('portfolios/'); // Fetch user's stocks     
         setMyStocks(myStocksResponse);
-
 
         // Fetch or create user's portfolio and get the ID
         const portfolioResponse = await fetchData('portfolios/');
@@ -61,38 +55,32 @@ function App() {
         console.error('Error fetching initial data:', error);
       }
     };
-
     fetchInitialData();
   }, []);
+
   // changes the current transactions when you buy or sell a stock by calling handleSeacrch
   useEffect(() => {
-    if (transactionData.length >= 0) {
-      
+    if (transactionData.length >= 0) { 
       handleSearch();
-
     }
   }, [transactionData]);
+
   // Function to handle portfolio name change
   const handlePortfolioChange = (event) => {
     setPortfolioName(event.target.value)
-
   };
+
   useEffect(() => {
     if (portfolioId) {
-      updatePortfolio({ portfolioId: portfolioId, newValue: TotalValue(filteredTransactions, exchangeData) })      
-    
-  }})
-
-  // Function to handle portfolio value change
+      updatePortfolio({ portfolioId: portfolioId, newValue: TotalValue(filteredTransactions, exchangeData) })         
+    }}
+  )
 
   // function that handles portfolios changes based in input and shows an error meassage if portfolio is not found
   const handleSearch = () => {
     try {
       findPortfolioIdByName(portfolioName);
-
-      if (portfolioId != null){
-
-        
+      if (portfolioId != null){    
       }
       setErrorMessage(null)
     } catch (error) {
@@ -126,7 +114,7 @@ function App() {
     setFilteredTransactions(filtered);
   };
 
- //TODO: Send put method to send server data amount the stock value
+ // TODO: Send put method to send server data amount the stock value
  // Function returns total value of all stocks in portfolio
   const TotalValue = (filteredTransactions, exchangeData) => {
     let totalStockPrice = 0;
@@ -137,17 +125,13 @@ function App() {
     const latestStocks = exchangeData.filter(stock => stock.date === mostRecentDate);
     filteredTransactions.forEach(transaction => {
       const stock = exchangeData.find(stock => stock.id === transaction.stock_id);
-      if (stock) {
-        
+      if (stock) {       
         const stockOnPurchaseDate = latestStocks.find(name => name.name === stock.name);
         if (stockOnPurchaseDate) {          
-          totalStockPrice += stockOnPurchaseDate.price_today * transaction.stock_amount
-          
-                
+          totalStockPrice += stockOnPurchaseDate.price_today * transaction.stock_amount         
         }
       }      
-    })
-    
+    })   
     return totalStockPrice
   }
 
@@ -170,8 +154,7 @@ function App() {
       await SellStock(transactionId);
       // Fetch updated transaction data after selling stock
       const updatedTransactionData = await fetchData('transactions/');
-       setTransactiondata(updatedTransactionData);
-         
+       setTransactiondata(updatedTransactionData);        
     } catch (error) {
       console.error('Error selling stock:', error);
       throw error;
@@ -181,19 +164,14 @@ function App() {
   // Function to handle buying stocks
   const BuyStocks = async ({ stockId: stockId, amount: amount }) => {    
     try {
-      if (amount != null && amount > 0 ){
-        
-        await buyStock({ stockId: stockId, portfolioId: portfolioId, amount: amount })
-        
+      if (amount != null && amount > 0 ){    
+        await buyStock({ stockId: stockId, portfolioId: portfolioId, amount: amount })    
         // Fetch updated transaction data after buying stock
         const updatedTransactionData = await fetchData('transactions/');
-        setTransactiondata(updatedTransactionData);
-        
+        setTransactiondata(updatedTransactionData); 
         handleSearch()
-        
         console.log("Here is portfolioID in handlesearch : ", portfolioId)
-        console.log("Total value looks like: ", TotalValue(filteredTransactions, exchangeData))
-        
+        console.log("Total value looks like: ", TotalValue(filteredTransactions, exchangeData)) 
       } else {
         console.log("BuyStock failed, invalid input value. Only INT accepted.");
       }
@@ -237,12 +215,9 @@ function App() {
           setErrorMessage(null)
           }, 5000)
       }
-      // Call the onBuy callback with the current buyAmount value
       onBuy(buyAmount);
-      // Clear the buyAmount state after buying
       setBuyAmount('');
     };
-  
     return (
       <div className="excel-row">
         <div className="excel-cell">
@@ -261,7 +236,6 @@ function App() {
           />
           <button className='btn-format' onClick={handleBuy}>Buy</button>
           <div className="error"> {buyErrorMessage} </div>
-
         </div>
       </div>
     );
@@ -282,12 +256,10 @@ function App() {
         <div className={`excel-cell ${valueClass}`}>{profit}</div>
         <div className="excel-cell">{purchase_date}</div>
         <div className="excel-cell">
-        <button className='btn-format sell' onClick={SellStock}>Sell</button>
-        
-    </div>
+        <button className='btn-format sell' onClick={SellStock}>Sell</button>   
       </div>
-    );
-  };
+    </div>
+  );};
 
 
   // Returns a component to display latest stock data
@@ -329,8 +301,7 @@ function App() {
               <div className="excel-cell">Daily Change</div>
               <div className="excel-cell">Value</div>
               <div className="excel-cell">Actions</div>
-            </div>
-            
+            </div>         
             <LatestStocks stocks={exchangeData} />
           </div>
         </Container>
@@ -370,17 +341,14 @@ function App() {
               exchangeData ={exchangeData}
               SellStock={() => SellStocks(transaction.id, portfolioId )}
               profit={`$${Valuecalculator(transaction, exchangeData)}`}
-              value={`$${SinglestockValue(transaction, exchangeData)} USD`}
-              
+              value={`$${SinglestockValue(transaction, exchangeData)} USD`}         
             />
           ))}
         </div>
-
       <div align-items='left'>
         <div  className="excel-cell total" >Total Value: {"$"+ TotalValue(filteredTransactions, exchangeData) + " USD"}</div>
         <div align-items='left' className="excel-cell total" >Total Profit: {"$" + Totalprofit(portfolioId, filteredTransactions, exchangeData) + " USD"}</div>
       </div>
-
       </Container>
       );
     } 
