@@ -110,7 +110,10 @@ async def get_portfolio(id: int, db: Session = Depends(get_db)):
 
 # TODO: This should probably be used in changing portfolio.value
 @app.put("/portfolios/{id}")
-async def update_portfolio_item(portfolio_id: int, portfolio_value: int, db: Session = Depends(get_db)):
+async def update_portfolio_item(request_data: dict, db: Session = Depends(get_db)):
+    portfolio_id = request_data.get('portfolio_id')
+    portfolio_value = request_data.get('portfolio_id')
+
     portfolio_item = db.query(models.Portfolio).filter(models.Portfolio.id == portfolio_id).first()
     if portfolio_item:
         portfolio_item.portfolio_value = portfolio_value
