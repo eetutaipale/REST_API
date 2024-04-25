@@ -67,6 +67,7 @@ function App() {
   // changes the current transactions when you buy or sell a stock by calling handleSeacrch
   useEffect(() => {
     if (transactionData.length >= 0) {
+      
       handleSearch();
 
     }
@@ -76,6 +77,11 @@ function App() {
     setPortfolioName(event.target.value)
 
   };
+  useEffect(() => {
+    if (portfolioId) {
+      updatePortfolio({ portfolioId: portfolioId, newValue: TotalValue(filteredTransactions, exchangeData) })      
+    
+  }})
 
   // Function to handle portfolio value change
 
@@ -132,13 +138,16 @@ function App() {
     filteredTransactions.forEach(transaction => {
       const stock = exchangeData.find(stock => stock.id === transaction.stock_id);
       if (stock) {
-        console.log(stock.price_today)
+        
         const stockOnPurchaseDate = latestStocks.find(name => name.name === stock.name);
         if (stockOnPurchaseDate) {          
-          totalStockPrice += stockOnPurchaseDate.price_today * transaction.stock_amount         
+          totalStockPrice += stockOnPurchaseDate.price_today * transaction.stock_amount
+          
+                
         }
       }      
     })
+    
     return totalStockPrice
   }
 
@@ -161,7 +170,8 @@ function App() {
       await SellStock(transactionId);
       // Fetch updated transaction data after selling stock
       const updatedTransactionData = await fetchData('transactions/');
-       setTransactiondata(updatedTransactionData);       
+       setTransactiondata(updatedTransactionData);
+         
     } catch (error) {
       console.error('Error selling stock:', error);
       throw error;
@@ -172,15 +182,18 @@ function App() {
   const BuyStocks = async ({ stockId: stockId, amount: amount }) => {    
     try {
       if (amount != null && amount > 0 ){
-        console.log(portfolioId)
+        
         await buyStock({ stockId: stockId, portfolioId: portfolioId, amount: amount })
+        
         // Fetch updated transaction data after buying stock
         const updatedTransactionData = await fetchData('transactions/');
         setTransactiondata(updatedTransactionData);
+        
         handleSearch()
+        
         console.log("Here is portfolioID in handlesearch : ", portfolioId)
         console.log("Total value looks like: ", TotalValue(filteredTransactions, exchangeData))
-        updatePortfolio(portfolioId, TotalValue(filteredTransactions, exchangeData))
+        
       } else {
         console.log("BuyStock failed, invalid input value. Only INT accepted.");
       }

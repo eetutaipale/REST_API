@@ -112,7 +112,7 @@ async def get_portfolio(id: int, db: Session = Depends(get_db)):
 @app.put("/portfolios/{id}")
 async def update_portfolio_item(request_data: dict, db: Session = Depends(get_db)):
     portfolio_id = request_data.get('portfolio_id')
-    portfolio_value = request_data.get('portfolio_id')
+    portfolio_value = request_data.get('portfolio_value')
 
     portfolio_item = db.query(models.Portfolio).filter(models.Portfolio.id == portfolio_id).first()
     if portfolio_item:
