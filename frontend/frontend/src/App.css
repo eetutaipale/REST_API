@@ -1,6 +1,8 @@
 .excel-table {
   display: flex;
   flex-direction: column;
+  width: max(100% - 150px);
+  flex-basis: auto;
 }
 
 .excel-row {
@@ -13,6 +15,9 @@
   flex: 1;
   padding: 8px;
   text-align: center;
+}
+.total{
+  align-items: left;
 }
 
 .excel-cell:first-child {
@@ -39,3 +44,64 @@
 .header .excel-cell {
   font-weight: bold;
 }
+
+.search-bar{
+  border-bottom: 1px solid #ccc;
+}
+
+.btn-search{
+  width: auto;
+  padding: .5em;
+}
+
+.input-search:hover {
+  width: 11em;
+  padding: .5em;
+}
+
+.btn-format {
+  width: auto;
+  margin: 0.1em;
+  height: 2.5em;
+  font: bold;
+  color: white;
+  text-shadow: #3d3d3dca;
+  font-weight: bold;
+  background-color:rgba(3, 186, 0, 0.692); 
+  border-radius: 2px;
+}
+
+.sell{
+  width: auto;
+  height: 2.5em;
+  font: bold;
+  color: white;
+  text-shadow: #3d3d3dca;
+  font-weight: bold;
+  background-color:rgba(186, 0, 0, 0.692); 
+  border-radius: 2px;
+}
+
+.btn-format:hover {
+  width: 3.2em;
+  padding: .5em;
+  color: rgb(0, 0, 0);
+  text-shadow: #3d3d3dca;
+  font-weight: bold;
+  background-color: rgba(187, 253, 183, 0.302);
+  border-radius: 4px;
+}
+
+.input-format {
+  margin: 0.1em;
+  width: 10em;
+  padding: .5em;
+}
+
+.input-format:hover {
+  width: 10.5em;
+  padding: .5em;
+  border-radius: 4px;
+  background-color: rgb(223, 223, 223);
+}
+

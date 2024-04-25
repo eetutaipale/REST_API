@@ -16,9 +16,13 @@ logger = logging.getLogger(__name__)
 host1 = "sqlstockserver.database.windows.net"
 host2 = "sqlserverest.database.windows.net" # Old server
 
+# Connection parameters with SQL server local version
 database_name = "Stockdb"
-server = os.getenv("server")
-string = f"mssql+pyodbc://@{server}/{database_name}?trusted_connection=yes&driver=ODBC Driver 17 for SQL Server"
+server_local = os.getenv("serverlocal")
+print(server_local)
+string_local = f"mssql+pyodbc://@{server_local}/{database_name}?trusted_connection=yes&driver=ODBC Driver 17 for SQL Server"
+print(string_local)
+# Connection string for SQL Server with Azure cloud SQL
 password = os.getenv("password")
 engine_str = URL.create(
     drivername="mssql+pyodbc",
@@ -35,8 +39,8 @@ engine_str = URL.create(
     }
 )
 
-# Engine and sessionmaker
-engine = create_engine(string, echo=True) # Creating an engine object to connect to database
+# Engine and sessionmaker // When making cloud based, remember to change connection string
+engine = create_engine(string_local, echo=True) # Creating an engine object to connect to database
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 metadata = MetaData()
 
