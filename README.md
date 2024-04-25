@@ -1,8 +1,8 @@
 # REST_API for sql database
 
-1.0 Google Cloud based SQL database web application to manage CRUD operations.
-2.0 Azure Cloud based SQL database web application to manage CRUD operations.
-3.0 Both free trials/this month is over so now running locally
+* 1.0 Google Cloud based SQL database web application to manage CRUD operations.
+* 2.0 Azure Cloud based SQL database web application to manage CRUD operations.
+* 3.0 Both free trials/this month is over so now running locally
 
 ## Description
 
