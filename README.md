@@ -1,10 +1,14 @@
 # REST_API for sql database
 
-Google Cloud based SQL database web application to manage CRUD operations.
+1.0 Google Cloud based SQL database web application to manage CRUD operations.
+2.0 Azure Cloud based SQL database web application to manage CRUD operations.
+3.0 Both free trials/this month is over so now running locally
 
 ## Description
 
-An in-depth paragraph about your project and overview of use.
+Restful API to handle simple fullstack web application. 
+Python based server with JavaScript client and SQL database CRUD functionalities.
+stockdata.org API to fetching data, FastAPI to handle HTTP communication. 
 
 ## Getting Started
 
@@ -35,21 +39,7 @@ Contributors names and contact info
 
 * Eetu Taipale
 * Arttu Kuitunen
-* Sami Kukkonen
-
-
-## Version History
-
-* 0.2
-    * Various bug fixes and optimizations
-    * See [commit change]() or See [release history]()
-* 0.1
-    * Initial Release
-
-## License
-
-This project is licensed under the [NAME HERE] License - see the LICENSE.md file for details
 
 ## Acknowledgments
-Inspiration, code snippets, etc.
-* [awesome-readme](https://github.com/matiassingers/awesome-readme)
+stockdata API
+* [awesome-readme](https://www.stockdata.org/)
