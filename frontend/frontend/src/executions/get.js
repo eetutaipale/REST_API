@@ -85,6 +85,7 @@ export const createPortfolio = async (portfolioValue) => {
   }
 };
 
+// Function to send Portfolio PUT method to backend endpoint.
 export const updatePortfolio = async ({ portfolioId, newValue }) => {
   try {
     const response = await fetch(`${apiUrl}/portfolios/${portfolioId}`, {
